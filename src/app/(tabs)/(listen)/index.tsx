@@ -9,22 +9,18 @@ import { useNowPlaying } from '@/hooks/use-now-playing'
 import { config } from '@/lib/config'
 import { formatTime, getPresenters } from '@/lib/format'
 import { MiniPlayer } from '@/components/player/mini-player'
-import { FullPlayer } from '@/components/player/full-player'
 import { SocialIcons } from '@/components/common/social-icons'
 import { Avatar } from '@/components/common/avatar'
 import { Badge } from '@/components/common/badge'
-import { Skeleton } from '@/components/common/skeleton'
 import { ContactForm } from '@/components/modals/contact-form'
 
 export default function ListenScreen() {
 	const { theme, colorScheme } = useTheme()
 	const { data: station, isError: stationError, refetch: refetchStation } = useStation()
 	const { data: nowPlaying, isError: nowPlayingError, refetch: refetchNowPlaying } = useNowPlaying()
-	const [playerExpanded, setPlayerExpanded] = useState(false)
 	const [contactFormVisible, setContactFormVisible] = useState(false)
 	const [refreshing, setRefreshing] = useState(false)
 
-	const stationName = config.name ?? station?.name ?? ''
 	const streams = station?.streams ?? []
 	const socialLinks = station?.social_links ?? []
 
@@ -79,7 +75,6 @@ export default function ListenScreen() {
 				<MiniPlayer
 					streams={streams}
 					nowPlaying={nowPlaying ?? null}
-					onExpand={() => setPlayerExpanded(true)}
 				/>
 
 				{/* Now Playing Card */}
@@ -109,6 +104,7 @@ export default function ListenScreen() {
 									borderRadius: 4,
 									backgroundColor: '#22c55e',
 								}}
+								accessible={false}
 							/>
 							<Text style={{ fontSize: 12, fontWeight: '600', color: theme.mutedForeground, textTransform: 'uppercase', letterSpacing: 0.5 }}>
 								On Air Now
@@ -253,15 +249,6 @@ export default function ListenScreen() {
 					</Pressable>
 				)}
 			</ScrollView>
-
-			{/* Full Player Modal */}
-			<FullPlayer
-				visible={playerExpanded}
-				onClose={() => setPlayerExpanded(false)}
-				streams={streams}
-				nowPlaying={nowPlaying ?? null}
-				stationName={stationName}
-			/>
 
 			{/* Contact Form Modal */}
 			{config.features?.contactFormSlug && (

@@ -9,10 +9,9 @@ import type { StationStream, NowPlaying } from '@techcake/broadcake-sdk'
 interface MiniPlayerProps {
 	streams: StationStream[]
 	nowPlaying: NowPlaying | null | undefined
-	onExpand: () => void
 }
 
-export function MiniPlayer({ streams, nowPlaying, onExpand }: MiniPlayerProps) {
+export function MiniPlayer({ streams, nowPlaying }: MiniPlayerProps) {
 	const { theme, colorScheme } = useTheme()
 	const { isPlaying, isBuffering, playerReady, playerError, currentMetadata, play, pause } = usePlayer()
 
@@ -38,10 +37,7 @@ export function MiniPlayer({ streams, nowPlaying, onExpand }: MiniPlayerProps) {
 
 	return (
 		<View style={{ gap: 6 }}>
-			<Pressable
-				onPress={onExpand}
-				accessibilityRole="button"
-				accessibilityLabel={`Now playing: ${showName}. ${trackTitle ?? ''} Tap to expand player`}
+			<View
 				style={{
 					flexDirection: 'row',
 					alignItems: 'center',
@@ -58,10 +54,7 @@ export function MiniPlayer({ streams, nowPlaying, onExpand }: MiniPlayerProps) {
 				}}
 			>
 				<Pressable
-					onPress={(e) => {
-						e.stopPropagation?.()
-						handlePlayPause()
-					}}
+					onPress={handlePlayPause}
 					disabled={!playerReady}
 					accessibilityRole="button"
 					accessibilityLabel={isPlaying ? 'Pause' : 'Play'}
@@ -103,13 +96,7 @@ export function MiniPlayer({ streams, nowPlaying, onExpand }: MiniPlayerProps) {
 						</Text>
 					)}
 				</View>
-
-				<Image
-					source="sf:chevron.up"
-					style={{ width: 14, height: 14, tintColor: theme.mutedForeground }}
-					accessible={false}
-				/>
-			</Pressable>
+			</View>
 
 			{playerError && (
 				<Text

@@ -9,7 +9,7 @@ interface DayPickerProps {
 	onSelect: (date: Date) => void
 }
 
-const DAYS_RANGE = 14
+const DAYS_RANGE = 7
 
 export function DayPicker({ selectedDate, onSelect }: DayPickerProps) {
 	const { theme } = useTheme()

@@ -65,6 +65,7 @@ export function Avatar({ uri, name = '?', size = 40, rounded = true }: AvatarPro
 			}}
 		>
 			<Text
+				accessible={false}
 				style={{
 					color: '#ffffff',
 					fontSize: size * 0.38,

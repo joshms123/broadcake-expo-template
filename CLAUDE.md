@@ -59,7 +59,7 @@ packages/app-template/
       theme-context.tsx     Light/dark + system preference + AsyncStorage
       player-context.tsx    Audio player state + stream selection
     components/
-      player/               mini-player, full-player, stream-selector
+      player/               mini-player, stream-selector
       schedule/             day-picker, schedule-slot, schedule-list
       common/               avatar, badge, skeleton, empty-state, time-display, social-icons
       modals/               show-detail, presenter-detail, contact-form
