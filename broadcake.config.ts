@@ -33,7 +33,9 @@ export interface BroadcakeAppConfig {
 
 const config: BroadcakeAppConfig = {
 	stationSlug: 'anchor-radio',
-	baseUrl: 'https://broadcake-production.up.railway.app',
+	// Leave unset to use the SDK default (https://app.broadcake.com).
+	// Point this at your own deployment only if you self-host Broadcake.
+	// baseUrl: 'https://app.broadcake.com',
 }
 
 export default config
