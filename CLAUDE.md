@@ -1,5 +1,9 @@
 # Broadcake App Template
 
+> **Scope**: this file covers the cloneable Expo listener app. Cross-cutting conventions, the
+> command reference and the traps list live in the **root `CLAUDE.md`** —
+> read that first.
+
 Cloneable Expo SDK 55 (React Native) listener app for radio stations. Station owners clone it, edit `broadcake.config.ts`, and publish to app stores. Uses the v1 public API via `@techcake/broadcake-sdk` — no auth required.
 
 ## Commands
