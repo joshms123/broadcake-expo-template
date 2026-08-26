@@ -61,7 +61,7 @@ packages/app-template/
       query-client.ts       React Query + AsyncStorage persister
       query-keys.ts         Centralized query key factory
       constants.ts          Polling intervals, storage keys
-      format.ts             formatTime, getPresenters
+      format.ts             formatTime, getPresenters, slotSentence, triggerHaptic
     services/
       player.ts             Audio session, stream loading, lock screen metadata
     hooks/                  React Query hooks (use-station, use-now-playing, use-schedule, etc.)
@@ -69,7 +69,7 @@ packages/app-template/
       theme-context.tsx     Light/dark + system preference + AsyncStorage
       player-context.tsx    Audio player state + stream selection
     components/
-      player/               mini-player
+      player/               play-button
       schedule/             day-picker, schedule-slot, schedule-list
       common/               action-button, app-icon, avatar, badge, skeleton, empty-state,
                             time-display, social-icons, error-boundary
@@ -164,12 +164,34 @@ if (process.env.EXPO_OS === 'ios') {
 - `accessibilityLabel` on icon-only buttons
 - `accessibilityState={{ selected, disabled }}` where appropriate
 - 44pt minimum touch targets
+- **A card is one stop, not four.** What is on air is one fact shown on four
+  lines, and without `accessible` on the container a screen reader stops at each
+  one — "On Air Now", the show, the presenters, the times. Collapse the card and
+  give it `slotSentence()` from `$lib/format`: `On air: Breakfast Show with Dave
+  and Sam. 7:00 AM to 9:00 AM. Indie, Rock`. Anything the collapse swallows
+  (genre badges) has to be in the sentence.
+
+  Note `accessibilityLabel` alone does nothing on a `View` — iOS only reads it
+  when `accessible` is set, so a label without it is dead code and the children
+  are still announced one by one. That is what this was.
+- **Say it, do not punctuate it.** `slotSentence` writes "to" rather than the en
+  dash the card draws, separates the times with a full stop rather than a comma
+  so they do not sound like another presenter, and joins names with "and".
+- **`@expo/ui` has no cross-platform `accessibilityLabel`.** iOS accessibility is
+  not wired up in it yet, so an icon-only native control has no name there. A
+  native button needs visible text — which is why the social buttons are
+  labelled rather than bare glyphs.
 
 ### Audio Player
 - Nothing is registered at the entry point. The previous library needed a playback service registered there, and when that call was missing the lock screen, notification, headset and car buttons all appeared and silently did nothing — expo-audio's controls drive the player natively, so that failure has no equivalent
 - What is on air comes from the station's schedule (`useNowPlaying`), not from tags in the stream. ICY tags only ever existed for stations whose encoder sends them, and they never reached the lock screen anyway — it showed the stream's quality name. `setActiveForLockScreen(..., { isLiveStream: true })` hides the scrub bar, since a live stream has no length to seek through
 - `PlayerProvider` wraps app, exposes `usePlayer()` hook
 - Stream selection persisted to AsyncStorage
+- The play control lives *in* the on-air card, and there is no separate player
+  card. There used to be one, and between them the show name appeared three
+  times: the player card printed it, then printed `currentMetadata` beneath it
+  as "artist – title" — which since the expo-audio move is the presenters and
+  the show, not stream tags — and then the on-air card printed it again
 
 ### No show reminders
 The template shipped a "Notify me" feature that nothing could reach: the hooks

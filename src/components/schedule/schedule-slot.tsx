@@ -2,7 +2,7 @@ import React from 'react'
 import { View, Text, Pressable } from 'react-native'
 import type { ScheduleSlot as ScheduleSlotType } from '@techcake/broadcake-sdk'
 import { useTheme } from '@/contexts/theme-context'
-import { formatTime, getPresenters } from '@/lib/format'
+import { formatTime, getPresenters, slotSentence } from '@/lib/format'
 import { Avatar } from '@/components/common/avatar'
 import { Badge } from '@/components/common/badge'
 
@@ -29,7 +29,7 @@ export const ScheduleSlot = React.memo(function ScheduleSlot({ slot, isNowPlayin
 			onPress={handlePress}
 			disabled={isAutomation || !onPress}
 			accessibilityRole={isAutomation ? undefined : 'button'}
-			accessibilityLabel={`${slot.show_name ?? 'Automation'}, ${formatTime(slot.slot_start)} to ${formatTime(slot.slot_end)}${slot.presenters.length > 0 ? `, with ${getPresenters(slot.presenters)}` : ''}`}
+			accessibilityLabel={slotSentence(slot)}
 			style={{
 				backgroundColor: theme.card,
 				borderRadius: 12,

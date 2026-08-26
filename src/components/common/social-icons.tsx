@@ -1,10 +1,11 @@
 import React from 'react'
-import { View, Pressable, Text } from 'react-native'
+import { View } from 'react-native'
 import * as WebBrowser from 'expo-web-browser'
+import { Button, Host, Icon, Row, Text } from '@expo/ui'
 import { useTheme } from '@/contexts/theme-context'
 import { triggerHaptic } from '@/lib/format'
 import type { StationSocialLink } from '@techcake/broadcake-sdk'
-import { AppIcon, type AppIconName } from '@/components/common/app-icon'
+import { appIcon, type AppIconName } from '@/components/common/app-icon'
 
 const PLATFORM_ICONS: Record<string, AppIconName> = {
 	instagram: 'camera',
@@ -23,6 +24,26 @@ interface SocialIconsProps {
 	links: StationSocialLink[]
 }
 
+/**
+ * The station's social accounts, as native buttons.
+ *
+ * Three things changed together, and they depend on each other.
+ *
+ * These were `Pressable`s with `accessibilityRole="link"` — but they open an
+ * in-app browser sheet rather than leaving the app, so button is the honest
+ * trait, and `@expo/ui`'s `Button` is a real one: a SwiftUI button on iOS, a
+ * Compose button on Android, with the platform's own press feedback.
+ *
+ * They are labelled now rather than icon-only, and that is what makes the
+ * native button usable here. `@expo/ui` has no cross-platform
+ * `accessibilityLabel` — on iOS an icon-only native button would have had no
+ * name at all — so the name has to come from visible text. Which these wanted
+ * anyway: the glyphs are generic SF Symbols, not brand marks, and nobody reads
+ * a thumbs-up as Facebook or an @ as X.
+ *
+ * The label is the platform, not "Visit Instagram". A button already announces
+ * that it is a button.
+ */
 export function SocialIcons({ links }: SocialIconsProps) {
 	const { theme } = useTheme()
 
@@ -40,28 +61,25 @@ export function SocialIcons({ links }: SocialIconsProps) {
 	}
 
 	return (
-		<View style={{ flexDirection: 'row', gap: 12, flexWrap: 'wrap' }}>
+		<View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
 			{links.map((link, i) => {
 				const icon = PLATFORM_ICONS[link.platform] ?? 'globe'
 				const label = link.platform.charAt(0).toUpperCase() + link.platform.slice(1)
 
 				return (
-					<Pressable
-						key={i}
-						onPress={() => handlePress(link.url)}
-						accessibilityRole="link"
-						accessibilityLabel={`Visit ${label}`}
-						style={{
-							width: 44,
-							height: 44,
-							borderRadius: 22,
-							backgroundColor: theme.secondary,
-							alignItems: 'center',
-							justifyContent: 'center',
-						}}
-					>
-						<AppIcon name={icon} size={20} color={theme.foreground} />
-					</Pressable>
+					// Position, not url: station_social_links has no unique constraint
+					// on url, so two identical ones would collide as keys.
+					// A Host each, so the row can still wrap -- @expo/ui's Row cannot.
+					<Host matchContents key={i}>
+						<Button variant="outlined" onPress={() => handlePress(link.url)}>
+							<Row spacing={6} alignment="center">
+								<Icon name={appIcon(icon)} size={16} color={theme.foreground} />
+								<Text textStyle={{ fontSize: 14, fontWeight: '500', color: theme.foreground }}>
+									{label}
+								</Text>
+							</Row>
+						</Button>
+					</Host>
 				)
 			})}
 		</View>

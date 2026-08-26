@@ -1,13 +1,13 @@
 import React, { useState } from 'react'
 import { View, Text, ScrollView, Pressable, RefreshControl } from 'react-native'
-import * as Haptics from 'expo-haptics'
 import Animated, { FadeIn } from 'react-native-reanimated'
 import { useTheme } from '@/contexts/theme-context'
 import { useStation } from '@/hooks/use-station'
 import { useNowPlaying } from '@/hooks/use-now-playing'
+import { usePlayer } from '@/contexts/player-context'
 import { config } from '@/lib/config'
-import { formatTime, getPresenters } from '@/lib/format'
-import { MiniPlayer } from '@/components/player/mini-player'
+import { formatTime, getPresenters, slotSentence, triggerHaptic } from '@/lib/format'
+import { PlayButton } from '@/components/player/play-button'
 import { SocialIcons } from '@/components/common/social-icons'
 import { Avatar } from '@/components/common/avatar'
 import { Badge } from '@/components/common/badge'
@@ -17,7 +17,8 @@ import { AppIcon } from '@/components/common/app-icon'
 export default function ListenScreen() {
 	const { theme, colorScheme } = useTheme()
 	const { data: station, isError: stationError, refetch: refetchStation } = useStation()
-	const { data: nowPlaying, isError: nowPlayingError, refetch: refetchNowPlaying } = useNowPlaying()
+	const { data: nowPlaying, refetch: refetchNowPlaying } = useNowPlaying()
+	const { playerError } = usePlayer()
 	const [contactFormVisible, setContactFormVisible] = useState(false)
 	const [refreshing, setRefreshing] = useState(false)
 
@@ -67,13 +68,15 @@ export default function ListenScreen() {
 					</View>
 				)}
 
-				{/* Mini Player */}
-				<MiniPlayer
-					streams={streams}
-					nowPlaying={nowPlaying ?? null}
-				/>
+				{/*
+				  On air — one card, with the player in it.
 
-				{/* Now Playing Card */}
+				  It used to be two: a player card naming the show, then this card
+				  naming it again. The player card managed to say it twice on its own,
+				  because its second line was written for ICY stream tags and now reads
+				  from the schedule, so "artist – title" came out as the presenters and
+				  the show. Three statements of one fact, stacked.
+				*/}
 				{nowPlaying?.now ? (
 					<Animated.View
 						entering={FadeIn.duration(300)}
@@ -82,61 +85,70 @@ export default function ListenScreen() {
 							borderRadius: 12,
 							borderCurve: 'continuous',
 							padding: 16,
-							gap: 12,
 							borderWidth: 1,
 							borderColor: theme.infoText,
+							flexDirection: 'row',
+							alignItems: 'center',
+							gap: 14,
 							boxShadow: colorScheme === 'dark'
 								? '0 2px 8px rgba(0,0,0,0.4)'
 								: '0 2px 8px rgba(0,0,0,0.08)',
 						}}
-						accessibilityRole="summary"
-						accessibilityLabel={`Now playing: ${nowPlaying.now.show_name}`}
 					>
-						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-							<View
-								style={{
-									width: 8,
-									height: 8,
-									borderRadius: 4,
-									backgroundColor: '#22c55e',
-								}}
-								accessible={false}
-							/>
-							<Text style={{ fontSize: 12, fontWeight: '600', color: theme.mutedForeground, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-								On Air Now
-							</Text>
-						</View>
+						<PlayButton streams={streams} size={52} />
 
-						<Text style={{ fontSize: 20, fontWeight: '700', color: theme.foreground }}>
-							{nowPlaying.now.show_name}
-						</Text>
-
-						{nowPlaying.now.presenters.length > 0 && (
+						{/* One element, one sentence — see slotSentence above. */}
+						<View
+							style={{ flex: 1, gap: 8 }}
+							accessible
+							accessibilityRole="summary"
+							accessibilityLabel={slotSentence(nowPlaying.now, 'On air')}
+						>
 							<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-								<View style={{ flexDirection: 'row' }}>
-									{nowPlaying.now.presenters.slice(0, 3).map((p, i) => (
-										<View key={i} style={{ marginLeft: i > 0 ? -8 : 0, zIndex: 3 - i }}>
-											<Avatar name={p.name} size={28} />
-										</View>
-									))}
-								</View>
-								<Text style={{ fontSize: 14, color: theme.mutedForeground }}>
-									{getPresenters(nowPlaying.now.presenters)}
+								<View
+									style={{
+										width: 8,
+										height: 8,
+										borderRadius: 4,
+										backgroundColor: '#22c55e',
+									}}
+								/>
+								<Text style={{ fontSize: 12, fontWeight: '600', color: theme.mutedForeground, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+									On Air Now
 								</Text>
 							</View>
-						)}
 
-						<Text style={{ fontSize: 13, color: theme.mutedForeground, fontVariant: ['tabular-nums'] }}>
-							{formatTime(nowPlaying.now.slot_start)} – {formatTime(nowPlaying.now.slot_end)}
-						</Text>
+							<Text style={{ fontSize: 20, fontWeight: '700', color: theme.foreground }}>
+								{nowPlaying.now.show_name}
+							</Text>
 
-						{nowPlaying.now.genres.length > 0 && (
-							<View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
-								{nowPlaying.now.genres.map((g) => (
-									<Badge key={g.slug} label={g.name} />
-								))}
-							</View>
-						)}
+							{nowPlaying.now.presenters.length > 0 && (
+								<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+									<View style={{ flexDirection: 'row' }}>
+										{nowPlaying.now.presenters.slice(0, 3).map((p, i) => (
+											<View key={i} style={{ marginLeft: i > 0 ? -8 : 0, zIndex: 3 - i }}>
+												<Avatar name={p.name} size={28} />
+											</View>
+										))}
+									</View>
+									<Text style={{ fontSize: 14, color: theme.mutedForeground, flex: 1 }}>
+										{getPresenters(nowPlaying.now.presenters)}
+									</Text>
+								</View>
+							)}
+
+							<Text style={{ fontSize: 13, color: theme.mutedForeground, fontVariant: ['tabular-nums'] }}>
+								{formatTime(nowPlaying.now.slot_start)} – {formatTime(nowPlaying.now.slot_end)}
+							</Text>
+
+							{nowPlaying.now.genres.length > 0 && (
+								<View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
+									{nowPlaying.now.genres.map((g) => (
+										<Badge key={g.slug} label={g.name} />
+									))}
+								</View>
+							)}
+						</View>
 					</Animated.View>
 				) : (
 					<View
@@ -147,23 +159,49 @@ export default function ListenScreen() {
 							padding: 16,
 							borderWidth: 1,
 							borderColor: theme.border,
+							flexDirection: 'row',
 							alignItems: 'center',
-							gap: 8,
+							gap: 14,
 						}}
 					>
-						<AppIcon name="moon.stars" size={32} color={theme.mutedForeground} />
-						<Text style={{ fontSize: 16, fontWeight: '600', color: theme.foreground }}>
-							Off Air
-						</Text>
-						{nowPlaying?.next && (
-							<Text style={{ fontSize: 14, color: theme.mutedForeground, textAlign: 'center' }}>
-								Up next: {nowPlaying.next.show_name} at {formatTime(nowPlaying.next.slot_start)}
-							</Text>
-						)}
+						{/* Off air is not off stream — automation is still playing. */}
+						<PlayButton streams={streams} size={52} />
+
+						<View
+							style={{ flex: 1, gap: 6 }}
+							accessible
+							accessibilityRole="summary"
+							accessibilityLabel={
+								nowPlaying?.next
+									? 'Off air. ' + slotSentence(nowPlaying.next, 'Up next')
+									: 'Off air'
+							}
+						>
+							<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+								<AppIcon name="moon.stars" size={20} color={theme.mutedForeground} />
+								<Text style={{ fontSize: 16, fontWeight: '600', color: theme.foreground }}>
+									Off Air
+								</Text>
+							</View>
+							{nowPlaying?.next && (
+								<Text style={{ fontSize: 14, color: theme.mutedForeground }}>
+									Up next: {nowPlaying.next.show_name} at {formatTime(nowPlaying.next.slot_start)}
+								</Text>
+							)}
+						</View>
 					</View>
 				)}
 
-				{/* Up Next Card */}
+				{playerError && (
+					<Text
+						style={{ fontSize: 13, color: theme.dangerText, paddingHorizontal: 4 }}
+						accessibilityRole="alert"
+					>
+						{playerError}
+					</Text>
+				)}
+
+				{/* Up Next */}
 				{nowPlaying?.now && nowPlaying?.next && (
 					<View
 						style={{
@@ -175,6 +213,9 @@ export default function ListenScreen() {
 							borderWidth: 1,
 							borderColor: theme.border,
 						}}
+						accessible
+						accessibilityRole="summary"
+						accessibilityLabel={slotSentence(nowPlaying.next, 'Up next')}
 					>
 						<Text style={{ fontSize: 12, fontWeight: '600', color: theme.mutedForeground, textTransform: 'uppercase', letterSpacing: 0.5 }}>
 							Up Next
@@ -210,14 +251,12 @@ export default function ListenScreen() {
 				{config.features?.contactForm && config.features?.contactFormSlug && (
 					<Pressable
 						onPress={() => {
-							if (process.env.EXPO_OS === 'ios') {
-								Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-							}
+							triggerHaptic()
 							setContactFormVisible(true)
 						}}
 						accessibilityRole="button"
 						accessibilityLabel="Message the station"
-						style={{
+						style={({ pressed }) => ({
 							flexDirection: 'row',
 							alignItems: 'center',
 							justifyContent: 'center',
@@ -228,7 +267,8 @@ export default function ListenScreen() {
 							borderCurve: 'continuous',
 							borderWidth: 1,
 							borderColor: theme.border,
-						}}
+							opacity: pressed ? 0.75 : 1,
+						})}
 					>
 						<AppIcon name="envelope" size={18} color={theme.foreground} />
 						<Text style={{ fontSize: 15, fontWeight: '600', color: theme.foreground }}>
