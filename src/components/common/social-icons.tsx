@@ -1,22 +1,19 @@
 import React from 'react'
-import { View } from 'react-native'
+import { View, Pressable } from 'react-native'
+import { Image } from 'expo-image'
 import * as WebBrowser from 'expo-web-browser'
-import { Button, Host, Icon, Row, Text } from '@expo/ui'
 import { useTheme } from '@/contexts/theme-context'
 import { triggerHaptic } from '@/lib/format'
 import type { StationSocialLink } from '@techcake/broadcake-sdk'
-import { appIcon, type AppIconName } from '@/components/common/app-icon'
+import { AppIcon, type AppIconName } from '@/components/common/app-icon'
+import { BRAND_MARKS } from '@/components/common/social-marks'
 
-const PLATFORM_ICONS: Record<string, AppIconName> = {
-	instagram: 'camera',
-	facebook: 'hand.thumbsup',
-	x: 'at',
-	mastodon: 'bubble.left',
-	tiktok: 'music.note',
-	youtube: 'play.rectangle',
-	bluesky: 'cloud',
-	threads: 'at.circle',
-	discord: 'bubble.left.and.bubble.right',
+/**
+ * For platforms with no CC0 brand mark. `platform` is free text in the
+ * database, so a station can type anything, and these are the best a system
+ * symbol can do -- which is not very well, hence the marks.
+ */
+const FALLBACK_ICONS: Record<string, AppIconName> = {
 	linkedin: 'briefcase',
 }
 
@@ -25,27 +22,23 @@ interface SocialIconsProps {
 }
 
 /**
- * The station's social accounts, as native buttons.
+ * The station's social accounts.
  *
- * Three things changed together, and they depend on each other.
+ * Icon-only circular buttons, which is what apps do with a "Follow us" row --
+ * but that only works with real brand marks, and it did not have any. See
+ * `social-marks.ts` for where they came from and why there are two tones.
  *
- * These were `Pressable`s with `accessibilityRole="link"` — but they open an
- * in-app browser sheet rather than leaving the app, so button is the honest
- * trait, and `@expo/ui`'s `Button` is a real one: a SwiftUI button on iOS, a
- * Compose button on Android, with the platform's own press feedback.
+ * `Pressable` rather than `@expo/ui`'s `Button`, and that is not a compromise:
+ * neither platform has a circular-icon-button primitive for a native button to
+ * be, and `@expo/ui` has no cross-platform `accessibilityLabel`, so a native
+ * icon-only button would have had no name at all under VoiceOver. The native
+ * button argument applies to buttons with text.
  *
- * They are labelled now rather than icon-only, and that is what makes the
- * native button usable here. `@expo/ui` has no cross-platform
- * `accessibilityLabel` — on iOS an icon-only native button would have had no
- * name at all — so the name has to come from visible text. Which these wanted
- * anyway: the glyphs are generic SF Symbols, not brand marks, and nobody reads
- * a thumbs-up as Facebook or an @ as X.
- *
- * The label is the platform, not "Visit Instagram". A button already announces
- * that it is a button.
+ * The label is the platform, not "Visit Instagram" -- a button already
+ * announces that it is a button.
  */
 export function SocialIcons({ links }: SocialIconsProps) {
-	const { theme } = useTheme()
+	const { theme, colorScheme } = useTheme()
 
 	if (links.length === 0) return null
 
@@ -61,25 +54,46 @@ export function SocialIcons({ links }: SocialIconsProps) {
 	}
 
 	return (
-		<View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
+		<View style={{ flexDirection: 'row', gap: 12, flexWrap: 'wrap' }}>
 			{links.map((link, i) => {
-				const icon = PLATFORM_ICONS[link.platform] ?? 'globe'
+				const mark = BRAND_MARKS[link.platform]
 				const label = link.platform.charAt(0).toUpperCase() + link.platform.slice(1)
 
 				return (
 					// Position, not url: station_social_links has no unique constraint
 					// on url, so two identical ones would collide as keys.
-					// A Host each, so the row can still wrap -- @expo/ui's Row cannot.
-					<Host matchContents key={i}>
-						<Button variant="outlined" onPress={() => handlePress(link.url)}>
-							<Row spacing={6} alignment="center">
-								<Icon name={appIcon(icon)} size={16} color={theme.foreground} />
-								<Text textStyle={{ fontSize: 14, fontWeight: '500', color: theme.foreground }}>
-									{label}
-								</Text>
-							</Row>
-						</Button>
-					</Host>
+					<Pressable
+						key={i}
+						onPress={() => handlePress(link.url)}
+						accessibilityRole="button"
+						accessibilityLabel={label}
+						style={({ pressed }) => ({
+							width: 44,
+							height: 44,
+							borderRadius: 22,
+							backgroundColor: theme.secondary,
+							alignItems: 'center',
+							justifyContent: 'center',
+							opacity: pressed ? 0.6 : 1,
+						})}
+					>
+						{mark ? (
+							<Image
+								source={colorScheme === 'dark' ? mark.dark : mark.light}
+								style={{ width: 20, height: 20 }}
+								contentFit="contain"
+								// The button carries the name; the glyph inside it must not
+								// repeat it.
+								accessible={false}
+							/>
+						) : (
+							<AppIcon
+								name={FALLBACK_ICONS[link.platform] ?? 'globe'}
+								size={20}
+								color={theme.foreground}
+							/>
+						)}
+					</Pressable>
 				)
 			})}
 		</View>

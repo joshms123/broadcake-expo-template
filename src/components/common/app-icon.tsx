@@ -27,10 +27,6 @@ const ICONS = {
 		ios: 'pause.fill',
 		android: require('@expo/material-symbols/pause.xml'),
 	}),
-	'play.rectangle': Icon.select({
-		ios: 'play.rectangle',
-		android: require('@expo/material-symbols/smart_display.xml'),
-	}),
 	'wifi.exclamationmark': Icon.select({
 		ios: 'wifi.exclamationmark',
 		android: require('@expo/material-symbols/wifi_off.xml'),
@@ -51,18 +47,6 @@ const ICONS = {
 		ios: 'globe',
 		android: require('@expo/material-symbols/language.xml'),
 	}),
-	'bubble.left.and.bubble.right': Icon.select({
-		ios: 'bubble.left.and.bubble.right',
-		android: require('@expo/material-symbols/forum.xml'),
-	}),
-	'bubble.left': Icon.select({
-		ios: 'bubble.left',
-		android: require('@expo/material-symbols/chat.xml'),
-	}),
-	'hand.thumbsup': Icon.select({
-		ios: 'hand.thumbsup',
-		android: require('@expo/material-symbols/thumb_up.xml'),
-	}),
 	briefcase: Icon.select({
 		ios: 'briefcase',
 		android: require('@expo/material-symbols/work.xml'),
@@ -78,26 +62,6 @@ const ICONS = {
 	'sun.max.fill': Icon.select({
 		ios: 'sun.max.fill',
 		android: require('@expo/material-symbols/light_mode.xml'),
-	}),
-	'music.note': Icon.select({
-		ios: 'music.note',
-		android: require('@expo/material-symbols/music_note.xml'),
-	}),
-	cloud: Icon.select({
-		ios: 'cloud',
-		android: require('@expo/material-symbols/cloud.xml'),
-	}),
-	camera: Icon.select({
-		ios: 'camera',
-		android: require('@expo/material-symbols/photo_camera.xml'),
-	}),
-	at: Icon.select({
-		ios: 'at',
-		android: require('@expo/material-symbols/alternate_email.xml'),
-	}),
-	'at.circle': Icon.select({
-		ios: 'at.circle',
-		android: require('@expo/material-symbols/alternate_email.xml'),
 	}),
 	'arrow.up.right': Icon.select({
 		ios: 'arrow.up.right',

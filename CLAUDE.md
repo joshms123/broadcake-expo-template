@@ -34,7 +34,10 @@ npm install
 - **expo-audio** — live streaming, background playback and lock screen controls. First-party, so it supports the New Architecture that SDK 57 defaults to, and the lock screen drives the player natively — there is no playback service to register and no remote-command handlers to attach
 - **@techcake/broadcake-sdk** — v1 public API client (zero auth)
 - **React Query** (`@tanstack/react-query`) with AsyncStorage persister for offline cache
-- **expo-image** — remote images (avatars, artwork). Icons go through `AppIcon`, not this
+- **expo-image** — remote images (avatars, artwork) and the social brand marks,
+  which are local SVGs (it decodes SVG on iOS, Android and web). System symbols
+  go through `AppIcon`, not this
+- **Simple Icons** — the social brand marks, CC0, committed under `assets/social/`
 - **react-native-reanimated** — skeleton shimmer, fade-in animations
 - **date-fns** — date formatting
 - **expo-haptics** — iOS tactile feedback
@@ -72,7 +75,9 @@ packages/app-template/
       player/               play-button
       schedule/             day-picker, schedule-slot, schedule-list
       common/               action-button, app-icon, avatar, badge, skeleton, empty-state,
-                            time-display, social-icons, error-boundary
+                            time-display, social-icons, social-marks, error-boundary
+  assets/
+    social/                 brand marks, two tones each (generated -- see below)
       modals/               show-detail, presenter-detail, contact-form
 ```
 
@@ -84,7 +89,7 @@ packages/app-template/
 - **`@/` imports** — path alias for `./src/*`
 - **`process.env.EXPO_OS`** — not `Platform.OS`
 - **`React.use()`** — not `React.useContext()`
-- **`AppIcon`** for every glyph — never `expo-image` with an `sf:` source, which renders nothing on Android
+- **`AppIcon`** for every *system* glyph — never `expo-image` with an `sf:` source, which renders nothing on Android. Brand marks are not system glyphs; see Social marks below
 
 ### Data Flow
 1. **SDK singleton** (`src/lib/sdk.ts`) — all data from v1 public API
@@ -151,6 +156,32 @@ and the rest is text; hosting it keeps one layout instead of one per platform.
 measures the window rather than a natively-sized sheet, so moving it is a
 keyboard-layout change that wants a device to confirm, and unlike the other two
 it is not fixing anything.
+
+### Social marks
+Social links are icon-only circular buttons, which is what a "Follow us" row is
+everywhere — but that only works with real brand marks, and this had SF Symbols
+standing in for logos: a camera for Instagram, a thumbs-up for Facebook, an @
+for X. SF Symbols carries no third-party brand marks and never will, so the
+mapping was a guess, and it failed sighted users before it failed anyone else.
+
+The marks are Simple Icons (CC0), committed under `assets/social/` and mapped in
+`social-marks.ts`. Points worth keeping:
+
+- **Two tones per brand, not one tinted mark.** `tintColor` on an SVG is one
+  more thing to be wrong on a device, and a black glyph is invisible on a dark
+  chip. Picking the file by colour scheme cannot fail that way.
+- **`require` paths must be literal** for Metro to resolve them, so that file is
+  generated rather than looped. Regenerate it if you add a brand.
+- **Metro treats `.svg` as an asset** (it is in `assetExts`, not `sourceExts`).
+  Adding `react-native-svg-transformer` would move it to `sourceExts` and break
+  every one of these requires.
+- **`platform` is free text in the database**, so anything unmapped falls back to
+  a system glyph. LinkedIn is one: Simple Icons removed it after a trademark
+  request.
+- **`Pressable`, not `@expo/ui`'s `Button`.** Neither platform has a
+  circular-icon-button primitive, and `@expo/ui` has no cross-platform
+  `accessibilityLabel` — a native icon-only button would have had no name under
+  VoiceOver. The native-button argument applies to buttons with text.
 
 ### Haptics (iOS only)
 ```tsx
