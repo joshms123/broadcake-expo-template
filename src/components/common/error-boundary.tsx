@@ -1,6 +1,7 @@
 import React from 'react'
-import { View, Text, Pressable } from 'react-native'
-import { Image } from 'expo-image'
+import { Appearance, View, Text, Pressable } from 'react-native'
+import { lightTheme, darkTheme } from '@/lib/theme'
+import { AppIcon } from '@/components/common/app-icon'
 
 interface ErrorBoundaryProps {
 	children: React.ReactNode
@@ -26,6 +27,12 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 	}
 
 	render() {
+		// A class cannot call useTheme, and hardcoding the light palette left the
+		// crash screen as near-black text on the dark window background — 1.05:1,
+		// which is to say invisible, on the one screen where trust is already
+		// spent. Read the scheme directly instead.
+		const c = Appearance.getColorScheme() === 'dark' ? darkTheme : lightTheme
+
 		if (this.state.hasError) {
 			return (
 				<View
@@ -35,17 +42,14 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 						justifyContent: 'center',
 						padding: 32,
 						gap: 16,
+						backgroundColor: c.background,
 					}}
 				>
-					<Image
-						source="sf:exclamationmark.triangle"
-						style={{ width: 48, height: 48, tintColor: '#6b7380' }}
-						accessible={false}
-					/>
-					<Text style={{ fontSize: 18, fontWeight: '600', color: '#090911', textAlign: 'center' }}>
+					<AppIcon name="exclamationmark.triangle" size={48} color={c.mutedForeground} />
+					<Text style={{ fontSize: 18, fontWeight: '600', color: c.foreground, textAlign: 'center' }}>
 						Something went wrong
 					</Text>
-					<Text style={{ fontSize: 14, color: '#6b7380', textAlign: 'center' }}>
+					<Text style={{ fontSize: 14, color: c.mutedForeground, textAlign: 'center' }}>
 						{this.state.error?.message ?? 'An unexpected error occurred.'}
 					</Text>
 					<Pressable
@@ -55,12 +59,12 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 						style={{
 							paddingHorizontal: 24,
 							paddingVertical: 12,
-							backgroundColor: '#0f172b',
+							backgroundColor: c.primary,
 							borderRadius: 8,
 							borderCurve: 'continuous',
 						}}
 					>
-						<Text style={{ color: '#f8fafc', fontWeight: '500' }}>Try Again</Text>
+						<Text style={{ color: c.primaryForeground, fontWeight: '500' }}>Try Again</Text>
 					</Pressable>
 				</View>
 			)

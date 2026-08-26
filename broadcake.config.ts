@@ -19,8 +19,6 @@ export interface BroadcakeAppConfig {
 
 	/** Feature toggles. */
 	features?: {
-		/** Show "Notify me" on schedule slots. Default: true */
-		notifications?: boolean
 		/** Show "Message the Station" button on home. Default: true */
 		contactForm?: boolean
 		/** Form slug to use for contact (required if contactForm is true). */

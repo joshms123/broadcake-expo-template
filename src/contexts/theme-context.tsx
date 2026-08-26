@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useEffect, useMemo, useState } from 'react'
 import { useColorScheme as useSystemColorScheme, Appearance } from 'react-native'
-import { ThemeProvider as NavThemeProvider, DefaultTheme, DarkTheme } from '@react-navigation/native'
+import { ThemeProvider as NavThemeProvider, DefaultTheme, DarkTheme } from "expo-router/react-navigation"
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { lightTheme, darkTheme, type Theme } from '@/lib/theme'
 import { THEME_STORAGE_KEY } from '@/lib/constants'

@@ -1,10 +1,10 @@
 import React from 'react'
 import { View, Text, Pressable, ActivityIndicator } from 'react-native'
-import { Image } from 'expo-image'
 import * as Haptics from 'expo-haptics'
 import { useTheme } from '@/contexts/theme-context'
 import { usePlayer } from '@/contexts/player-context'
 import type { StationStream, NowPlaying } from '@techcake/broadcake-sdk'
+import { AppIcon } from '@/components/common/app-icon'
 
 interface MiniPlayerProps {
 	streams: StationStream[]
@@ -72,10 +72,10 @@ export function MiniPlayer({ streams, nowPlaying }: MiniPlayerProps) {
 					{isBuffering ? (
 						<ActivityIndicator size="small" color={theme.primaryForeground} />
 					) : (
-						<Image
-							source={isPlaying ? 'sf:pause.fill' : 'sf:play.fill'}
-							style={{ width: 18, height: 18, tintColor: theme.primaryForeground }}
-							accessible={false}
+						<AppIcon
+							name={isPlaying ? 'pause.fill' : 'play.fill'}
+							size={18}
+							color={theme.primaryForeground}
 						/>
 					)}
 				</Pressable>

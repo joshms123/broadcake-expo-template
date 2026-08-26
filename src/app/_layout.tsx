@@ -1,7 +1,4 @@
-import { LogBox } from 'react-native'
 import { Stack } from 'expo-router/stack'
-
-LogBox.ignoreAllLogs()
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import { queryClient, asyncStoragePersister } from '@/lib/query-client'
 import { ThemeProvider } from '@/contexts/theme-context'

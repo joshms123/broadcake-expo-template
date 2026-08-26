@@ -5,23 +5,22 @@ A cloneable Expo React Native app for radio station listeners. Customize with yo
 ## Features
 
 - Live audio streaming with background playback and lock screen controls
-- Automatic track title detection from ICY stream metadata
+- Lock screen, notification, headset and car controls
 - Now playing and up next display
 - Weekly schedule browser with day navigation
 - Show and presenter detail views
 - Contact form for messaging the station
-- Show notifications ("Notify me" reminders)
 - Dark mode support
 - Offline caching
 
 ## Prerequisites
 
-- Node.js 18+
+- Node.js 20.19.4+ (what React Native 0.83 requires)
 - [Expo CLI](https://docs.expo.dev/get-started/installation/)
 - [EAS CLI](https://docs.expo.dev/eas/) (for app store builds)
 - Xcode (for iOS) / Android Studio (for Android)
 
-> **Note:** This app requires a dev build (not Expo Go) due to `react-native-track-player`.
+> **Note:** This app requires a dev build (not Expo Go), because `expo-audio` is a native module.
 
 ## Getting Started
 
@@ -62,7 +61,6 @@ All configuration is in `broadcake.config.ts`:
 | `tagline` | `string` | — | Subtitle below station name |
 | `theme.light.primary` | `string` | `#0f172b` | Light theme accent color (hex) |
 | `theme.dark.primary` | `string` | `#f8fafc` | Dark theme accent color (hex) |
-| `features.notifications` | `boolean` | `true` | Enable "Notify me" on shows |
 | `features.contactForm` | `boolean` | `true` | Show "Message the Station" button |
 | `features.contactFormSlug` | `string` | — | Form slug for contact (from Broadcake dashboard) |
 | `nowPlayingInterval` | `number` | `30000` | Now-playing poll interval (ms) |
@@ -90,7 +88,6 @@ eas submit --platform android
 ## Tech Stack
 
 - Expo SDK 55 + React Native 0.83
-- react-native-track-player (audio streaming + ICY metadata)
+- expo-audio (streaming, background playback, lock screen controls)
 - @techcake/broadcake-sdk (v1 public API)
 - React Query + AsyncStorage (offline caching)
-- expo-notifications (local show reminders)

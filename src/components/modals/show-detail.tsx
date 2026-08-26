@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import { View, Text, ScrollView, Modal, Pressable } from 'react-native'
+import { View, Text, ScrollView, Pressable } from 'react-native'
+import { BottomSheet, RNHostView } from '@expo/ui'
 import { useTheme } from '@/contexts/theme-context'
 import { useShow } from '@/hooks/use-show'
 import { useShowSchedule } from '@/hooks/use-show-schedule'
@@ -17,6 +18,18 @@ interface ShowDetailProps {
 	showName?: string
 }
 
+/**
+ * A show's detail, in a real sheet.
+ *
+ * `BottomSheet` rather than a React Native `Modal` — see `PresenterDetail` for
+ * why. The change that matters here is where the presenter sheet lives: it is
+ * now *inside* this one rather than beside it.
+ *
+ * As siblings, the two were React Native modals asking the same view controller
+ * to present, and iOS honours only the first — so tapping a presenter while the
+ * show was open did nothing at all. Nested, the presenter sheet is hosted within
+ * this sheet's own content, which is the arrangement that stacks.
+ */
 export function ShowDetail({ visible, onClose, showSlug, showName }: ShowDetailProps) {
 	const { theme } = useTheme()
 	const { data: show } = useShow(visible ? showSlug : null)
@@ -24,13 +37,13 @@ export function ShowDetail({ visible, onClose, showSlug, showName }: ShowDetailP
 	const [presenterSlug, setPresenterSlug] = useState<string | null>(null)
 
 	return (
-		<>
-			<Modal
-				visible={visible}
-				animationType="slide"
-				presentationStyle="formSheet"
-				onRequestClose={onClose}
-			>
+		<BottomSheet
+			isPresented={visible}
+			onDismiss={onClose}
+			snapPoints={['full']}
+			contentPadding={0}
+		>
+			<RNHostView>
 				<View style={{ flex: 1, backgroundColor: theme.background }}>
 					{/* Header */}
 					<View
@@ -46,6 +59,7 @@ export function ShowDetail({ visible, onClose, showSlug, showName }: ShowDetailP
 						<Text
 							style={{ fontSize: 17, fontWeight: '600', color: theme.foreground, flex: 1 }}
 							numberOfLines={1}
+							accessibilityRole="header"
 						>
 							{show?.name ?? showName ?? 'Show'}
 						</Text>
@@ -165,15 +179,15 @@ export function ShowDetail({ visible, onClose, showSlug, showName }: ShowDetailP
 							</View>
 						)}
 					</ScrollView>
-				</View>
-			</Modal>
 
-			{/* Nested presenter detail */}
-			<PresenterDetail
-				visible={!!presenterSlug}
-				onClose={() => setPresenterSlug(null)}
-				presenterSlug={presenterSlug}
-			/>
-		</>
+					{/* Inside this sheet, not beside it — see the note above. */}
+					<PresenterDetail
+						visible={!!presenterSlug}
+						onClose={() => setPresenterSlug(null)}
+						presenterSlug={presenterSlug}
+					/>
+				</View>
+			</RNHostView>
+		</BottomSheet>
 	)
 }

@@ -77,7 +77,7 @@ export const ScheduleSlot = React.memo(function ScheduleSlot({ slot, isNowPlayin
 				<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
 					<View style={{ flexDirection: 'row' }}>
 						{slot.presenters.slice(0, 3).map((p, i) => (
-							<View key={p.name} style={{ marginLeft: i > 0 ? -8 : 0, zIndex: 3 - i }}>
+							<View key={i} style={{ marginLeft: i > 0 ? -8 : 0, zIndex: 3 - i }}>
 								<Avatar name={p.name} size={24} />
 							</View>
 						))}

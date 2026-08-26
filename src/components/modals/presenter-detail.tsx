@@ -1,5 +1,6 @@
 import React from 'react'
-import { View, Text, ScrollView, Modal, Pressable } from 'react-native'
+import { View, Text, ScrollView, Pressable } from 'react-native'
+import { BottomSheet, RNHostView } from '@expo/ui'
 import { useTheme } from '@/contexts/theme-context'
 import { usePresenter } from '@/hooks/use-presenter'
 import { Avatar } from '@/components/common/avatar'
@@ -10,111 +11,135 @@ interface PresenterDetailProps {
 	presenterSlug: string | null
 }
 
+/**
+ * A presenter's profile, in a real sheet.
+ *
+ * `BottomSheet` rather than a React Native `Modal`: it is the platform's own
+ * sheet on both sides — a UIKit presentation on iOS and a Compose
+ * `ModalBottomSheet` on Android, where `presentationStyle="formSheet"` had been
+ * ignored and this covered the whole screen. The grabber, the swipe to dismiss
+ * and the back gesture come with it.
+ *
+ * The body stays React Native inside `RNHostView`. The avatars are remote
+ * images and the rows are ordinary text; there is nothing here `@expo/ui` draws
+ * better, and hosting it keeps one layout rather than one per platform.
+ *
+ * It brings its own `Host`, so it must not be wrapped in another one.
+ */
 export function PresenterDetail({ visible, onClose, presenterSlug }: PresenterDetailProps) {
 	const { theme } = useTheme()
 	const { data: presenter } = usePresenter(visible ? presenterSlug : null)
 
 	return (
-		<Modal
-			visible={visible}
-			animationType="slide"
-			presentationStyle="formSheet"
-			onRequestClose={onClose}
+		<BottomSheet
+			isPresented={visible}
+			onDismiss={onClose}
+			// A definite height, not fitToContents: the body scrolls, and a sheet
+			// sizing itself to a scroll view has no height to settle on.
+			snapPoints={['full']}
+			// The content draws its own insets, as it did as a modal.
+			contentPadding={0}
 		>
-			<View style={{ flex: 1, backgroundColor: theme.background }}>
-				{/* Header */}
-				<View
-					style={{
-						flexDirection: 'row',
-						justifyContent: 'space-between',
-						alignItems: 'center',
-						padding: 16,
-						borderBottomWidth: 1,
-						borderBottomColor: theme.border,
-					}}
-				>
-					<Text
-						style={{ fontSize: 17, fontWeight: '600', color: theme.foreground }}
-						numberOfLines={1}
+			<RNHostView>
+				<View style={{ flex: 1, backgroundColor: theme.background }}>
+					{/* Header */}
+					<View
+						style={{
+							flexDirection: 'row',
+							justifyContent: 'space-between',
+							alignItems: 'center',
+							padding: 16,
+							borderBottomWidth: 1,
+							borderBottomColor: theme.border,
+						}}
 					>
-						{presenter?.display_name ?? 'Presenter'}
-					</Text>
-					<Pressable
-						onPress={onClose}
-						accessibilityRole="button"
-						accessibilityLabel="Close"
-						hitSlop={12}
-					>
-						<Text style={{ fontSize: 15, color: theme.primary, fontWeight: '500' }}>
-							Done
+						<Text
+							style={{ fontSize: 17, fontWeight: '600', color: theme.foreground }}
+							numberOfLines={1}
+							accessibilityRole="header"
+						>
+							{presenter?.display_name ?? 'Presenter'}
 						</Text>
-					</Pressable>
-				</View>
-
-				<ScrollView contentContainerStyle={{ padding: 16, gap: 20, paddingBottom: 32 }}>
-					{/* Avatar + name */}
-					<View style={{ alignItems: 'center', gap: 12 }}>
-						<Avatar
-							uri={presenter?.avatar_url}
-							name={presenter?.display_name ?? '?'}
-							size={96}
-						/>
-						<View style={{ alignItems: 'center', gap: 4 }}>
-							<Text style={{ fontSize: 22, fontWeight: '700', color: theme.foreground }}>
-								{presenter?.display_name}
+						{/* Kept even though the sheet can be swiped away: a swipe is not
+						    reachable by every input, and the escape gesture is not
+						    discoverable. */}
+						<Pressable
+							onPress={onClose}
+							accessibilityRole="button"
+							accessibilityLabel="Close"
+							hitSlop={12}
+						>
+							<Text style={{ fontSize: 15, color: theme.primary, fontWeight: '500' }}>
+								Done
 							</Text>
-							{presenter?.pronouns && (
-								<Text style={{ fontSize: 14, color: theme.mutedForeground }}>
-									{presenter.pronouns}
-								</Text>
-							)}
-						</View>
+						</Pressable>
 					</View>
 
-					{/* Bio */}
-					{presenter?.bio && (
-						<Text style={{ fontSize: 15, color: theme.foreground, lineHeight: 22 }}>
-							{presenter.bio}
-						</Text>
-					)}
-
-					{/* Shows */}
-					{presenter?.shows && presenter.shows.length > 0 && (
-						<View style={{ gap: 10 }}>
-							<Text
-								style={{ fontSize: 13, fontWeight: '600', color: theme.mutedForeground, textTransform: 'uppercase', letterSpacing: 0.5 }}
-								accessibilityRole="header"
-							>
-								Shows
-							</Text>
-							{presenter.shows.map((show) => (
-								<View
-									key={show.id}
-									style={{
-										padding: 12,
-										backgroundColor: theme.secondary,
-										borderRadius: 10,
-										borderCurve: 'continuous',
-										gap: 4,
-									}}
-								>
-									<Text style={{ fontSize: 15, fontWeight: '500', color: theme.foreground }}>
-										{show.name}
+					<ScrollView contentContainerStyle={{ padding: 16, gap: 20, paddingBottom: 32 }}>
+						{/* Avatar + name */}
+						<View style={{ alignItems: 'center', gap: 12 }}>
+							<Avatar
+								uri={presenter?.avatar_url}
+								name={presenter?.display_name ?? '?'}
+								size={96}
+							/>
+							<View style={{ alignItems: 'center', gap: 4 }}>
+								<Text style={{ fontSize: 22, fontWeight: '700', color: theme.foreground }}>
+									{presenter?.display_name}
+								</Text>
+								{presenter?.pronouns && (
+									<Text style={{ fontSize: 14, color: theme.mutedForeground }}>
+										{presenter.pronouns}
 									</Text>
-									{show.description && (
-										<Text
-											style={{ fontSize: 13, color: theme.mutedForeground }}
-											numberOfLines={2}
-										>
-											{show.description}
-										</Text>
-									)}
-								</View>
-							))}
+								)}
+							</View>
 						</View>
-					)}
-				</ScrollView>
-			</View>
-		</Modal>
+
+						{/* Bio */}
+						{presenter?.bio && (
+							<Text style={{ fontSize: 15, color: theme.foreground, lineHeight: 22 }}>
+								{presenter.bio}
+							</Text>
+						)}
+
+						{/* Shows */}
+						{presenter?.shows && presenter.shows.length > 0 && (
+							<View style={{ gap: 10 }}>
+								<Text
+									style={{ fontSize: 13, fontWeight: '600', color: theme.mutedForeground, textTransform: 'uppercase', letterSpacing: 0.5 }}
+									accessibilityRole="header"
+								>
+									Shows
+								</Text>
+								{presenter.shows.map((show) => (
+									<View
+										key={show.id}
+										style={{
+											padding: 12,
+											backgroundColor: theme.secondary,
+											borderRadius: 10,
+											borderCurve: 'continuous',
+											gap: 4,
+										}}
+									>
+										<Text style={{ fontSize: 15, fontWeight: '500', color: theme.foreground }}>
+											{show.name}
+										</Text>
+										{show.description && (
+											<Text
+												style={{ fontSize: 13, color: theme.mutedForeground }}
+												numberOfLines={2}
+											>
+												{show.description}
+											</Text>
+										)}
+									</View>
+								))}
+							</View>
+						)}
+					</ScrollView>
+				</View>
+			</RNHostView>
+		</BottomSheet>
 	)
 }

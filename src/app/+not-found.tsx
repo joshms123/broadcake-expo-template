@@ -1,7 +1,8 @@
 import { Stack } from 'expo-router'
-import { View, Text, Pressable } from 'react-native'
+import { View, Text } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useTheme } from '@/contexts/theme-context'
+import { ActionButton } from '@/components/common/action-button'
 
 export default function NotFoundScreen() {
 	const { theme } = useTheme()
@@ -29,22 +30,10 @@ export default function NotFoundScreen() {
 				>
 					Page not found
 				</Text>
-				<Pressable
+				<ActionButton
+					label="Go Home"
 					onPress={() => router.replace('/(tabs)/(listen)')}
-					accessibilityRole="button"
-					accessibilityLabel="Go to home screen"
-					style={{
-						paddingHorizontal: 20,
-						paddingVertical: 10,
-						backgroundColor: theme.primary,
-						borderRadius: 8,
-						borderCurve: 'continuous',
-					}}
-				>
-					<Text style={{ color: theme.primaryForeground, fontWeight: '500' }}>
-						Go Home
-					</Text>
-				</Pressable>
+				/>
 			</View>
 		</>
 	)

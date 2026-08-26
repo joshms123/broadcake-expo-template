@@ -1,14 +1,15 @@
-import React, { createContext, useCallback, useEffect, useMemo, useState } from 'react'
-import TrackPlayer, { State, usePlaybackState } from 'react-native-track-player'
+import React, { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import type { StationStream } from '@techcake/broadcake-sdk'
-import { setupPlayer, playStream } from '@/services/player'
 import {
-	startMetadataListener,
-	stopMetadataListener,
+	configureAudioSession,
+	playStream,
+	stopStream,
 	updateLockScreenMetadata,
 	type StreamMetadata,
-} from '@/services/metadata'
+} from '@/services/player'
+import { useNowPlaying } from '@/hooks/use-now-playing'
 import { STREAM_STORAGE_KEY } from '@/lib/constants'
 
 interface PlayerContextValue {
@@ -18,9 +19,9 @@ interface PlayerContextValue {
 	playerError: string | null
 	currentMetadata: StreamMetadata
 	selectedStream: StationStream | null
-	play: (streams: StationStream[]) => Promise<void>
-	pause: () => Promise<void>
-	selectStream: (stream: StationStream, streams: StationStream[]) => Promise<void>
+	play: (streams: StationStream[]) => void
+	pause: () => void
+	selectStream: (stream: StationStream) => void
 }
 
 const PlayerContext = createContext<PlayerContextValue>({
@@ -30,108 +31,107 @@ const PlayerContext = createContext<PlayerContextValue>({
 	playerError: null,
 	currentMetadata: {},
 	selectedStream: null,
-	play: async () => {},
-	pause: async () => {},
-	selectStream: async () => {},
+	play: () => {},
+	pause: () => {},
+	selectStream: () => {},
 })
 
 export function PlayerProvider({ children }: { children: React.ReactNode }) {
-	const playbackState = usePlaybackState()
+	// One player for the app's life. Sources are swapped with replace() rather
+	// than by rebuilding it, so switching stream quality does not tear down the
+	// lock-screen session.
+	const player = useAudioPlayer(null)
+	const status = useAudioPlayerStatus(player)
+
 	const [selectedStream, setSelectedStream] = useState<StationStream | null>(null)
-	const [currentMetadata, setCurrentMetadata] = useState<StreamMetadata>({})
 	const [playerReady, setPlayerReady] = useState(false)
 	const [playerError, setPlayerError] = useState<string | null>(null)
 	const [streamRestored, setStreamRestored] = useState(false)
 
-	// Setup player with error handling
+	// What is actually on air, from the station's own schedule rather than from
+	// tags in the stream. Every station has this; not every station's encoder
+	// sends ICY.
+	const { data: nowPlaying } = useNowPlaying()
+	const currentMetadata = useMemo<StreamMetadata>(
+		() => ({
+			title: nowPlaying?.now?.show_name ?? selectedStream?.name,
+			artist: nowPlaying?.now?.presenters?.map((p) => p.name).join(', ') || 'Live',
+		}),
+		[nowPlaying, selectedStream]
+	)
+
+	const isPlaying = status.playing
+	const isBuffering = status.isBuffering
+
 	useEffect(() => {
-		setupPlayer()
+		configureAudioSession()
 			.then(() => setPlayerReady(true))
-			.catch((err) => {
-				setPlayerError(err instanceof Error ? err.message : 'Failed to initialize audio player')
-			})
+			.catch((err) =>
+				setPlayerError(err instanceof Error ? err.message : 'Could not start audio')
+			)
 	}, [])
 
-	// Listen for ICY metadata
-	useEffect(() => {
-		if (!playerReady) return
-
-		startMetadataListener((meta) => {
-			setCurrentMetadata(meta)
-			updateLockScreenMetadata({
-				title: meta.title ?? 'Live',
-				artist: meta.artist,
-			})
-		})
-
-		return () => stopMetadataListener()
-	}, [playerReady])
-
-	// Restore saved stream preference (before play can be called)
 	useEffect(() => {
 		AsyncStorage.getItem(STREAM_STORAGE_KEY)
-			.then((saved) => {
-				if (saved) {
+			.then((raw) => {
+				if (raw) {
 					try {
-						setSelectedStream(JSON.parse(saved))
-					} catch {}
+						setSelectedStream(JSON.parse(raw))
+					} catch {
+						// A stream that will not parse is one the user never picked.
+					}
 				}
 			})
 			.finally(() => setStreamRestored(true))
 	}, [])
 
-	const isPlaying = playbackState.state === State.Playing
-	const isBuffering =
-		playbackState.state === State.Buffering ||
-		playbackState.state === State.Loading
+	// Keep the lock screen current as the schedule moves on, but only while
+	// something is playing — there is no lock-screen session otherwise.
+	const lastPushed = useRef<string>('')
+	useEffect(() => {
+		if (!isPlaying) return
+		const key = `${currentMetadata.title}|${currentMetadata.artist}`
+		if (key === lastPushed.current) return
+		lastPushed.current = key
+		updateLockScreenMetadata(player, currentMetadata)
+	}, [isPlaying, currentMetadata, player])
 
 	const play = useCallback(
-		async (streams: StationStream[]) => {
+		(streams: StationStream[]) => {
 			if (!playerReady || !streamRestored || streams.length === 0) return
 
-			const stream =
-				selectedStream ??
-				streams.find((s) => s.is_default) ??
-				streams[0]
-
+			const stream = selectedStream ?? streams.find((s) => s.is_default) ?? streams[0]
 			setSelectedStream(stream)
-			AsyncStorage.setItem(STREAM_STORAGE_KEY, JSON.stringify(stream))
+			AsyncStorage.setItem(STREAM_STORAGE_KEY, JSON.stringify(stream)).catch(() => {})
 
 			try {
-				await playStream(stream.url, {
-					title: stream.name,
-					artist: 'Live',
-				})
+				playStream(player, stream.url, currentMetadata)
 				setPlayerError(null)
 			} catch (err) {
-				setPlayerError(err instanceof Error ? err.message : 'Failed to play stream')
+				setPlayerError(err instanceof Error ? err.message : 'Could not play this stream')
 			}
 		},
-		[playerReady, streamRestored, selectedStream]
+		[player, playerReady, streamRestored, selectedStream, currentMetadata]
 	)
 
-	const pause = useCallback(async () => {
-		await TrackPlayer.pause()
-	}, [])
+	const pause = useCallback(() => {
+		stopStream(player)
+	}, [player])
 
 	const selectStream = useCallback(
-		async (stream: StationStream, streams: StationStream[]) => {
+		(stream: StationStream) => {
 			setSelectedStream(stream)
-			AsyncStorage.setItem(STREAM_STORAGE_KEY, JSON.stringify(stream))
+			AsyncStorage.setItem(STREAM_STORAGE_KEY, JSON.stringify(stream)).catch(() => {})
 
-			if (isPlaying || isBuffering) {
-				try {
-					await playStream(stream.url, {
-						title: stream.name,
-						artist: 'Live',
-					})
-					setPlayerError(null)
-				} catch (err) {
-					setPlayerError(err instanceof Error ? err.message : 'Failed to switch stream')
-				}
+			if (!isPlaying && !isBuffering) return
+			try {
+				playStream(player, stream.url, currentMetadata)
+				setPlayerError(null)
+			} catch (err) {
+				setPlayerError(err instanceof Error ? err.message : 'Could not switch stream')
 			}
 		},
-		[isPlaying, isBuffering]
+		[player, isPlaying, isBuffering, currentMetadata]
 	)
 
 	const value = useMemo(
@@ -146,14 +146,20 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 			pause,
 			selectStream,
 		}),
-		[isPlaying, isBuffering, playerReady, playerError, currentMetadata, selectedStream, play, pause, selectStream]
+		[
+			isPlaying,
+			isBuffering,
+			playerReady,
+			playerError,
+			currentMetadata,
+			selectedStream,
+			play,
+			pause,
+			selectStream,
+		]
 	)
 
-	return (
-		<PlayerContext value={value}>
-			{children}
-		</PlayerContext>
-	)
+	return <PlayerContext value={value}>{children}</PlayerContext>
 }
 
 export function usePlayer(): PlayerContextValue {

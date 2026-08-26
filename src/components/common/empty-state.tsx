@@ -1,11 +1,12 @@
 import React from 'react'
-import { View, Text, Pressable } from 'react-native'
-import { Image } from 'expo-image'
+import { View, Text } from 'react-native'
 import Animated, { FadeIn } from 'react-native-reanimated'
 import { useTheme } from '@/contexts/theme-context'
+import { AppIcon, type AppIconName } from '@/components/common/app-icon'
+import { ActionButton } from '@/components/common/action-button'
 
 interface EmptyStateProps {
-	icon?: string
+	icon?: AppIconName
 	title: string
 	message?: string
 	actionLabel?: string
@@ -25,13 +26,7 @@ export function EmptyState({ icon, title, message, actionLabel, onAction }: Empt
 				gap: 12,
 			}}
 		>
-			{icon && (
-				<Image
-					source={icon}
-					style={{ width: 48, height: 48, tintColor: theme.mutedForeground }}
-					accessible={false}
-				/>
-			)}
+			{icon && <AppIcon name={icon} size={48} color={theme.mutedForeground} />}
 			<Text
 				style={{
 					fontSize: 16,
@@ -55,23 +50,9 @@ export function EmptyState({ icon, title, message, actionLabel, onAction }: Empt
 				</Text>
 			)}
 			{actionLabel && onAction && (
-				<Pressable
-					onPress={onAction}
-					accessibilityRole="button"
-					accessibilityLabel={actionLabel}
-					style={{
-						paddingHorizontal: 20,
-						paddingVertical: 10,
-						backgroundColor: theme.primary,
-						borderRadius: 8,
-						borderCurve: 'continuous',
-						marginTop: 4,
-					}}
-				>
-					<Text style={{ color: theme.primaryForeground, fontWeight: '500' }}>
-						{actionLabel}
-					</Text>
-				</Pressable>
+				<View style={{ marginTop: 4 }}>
+					<ActionButton label={actionLabel} onPress={onAction} />
+				</View>
 			)}
 		</Animated.View>
 	)

@@ -47,7 +47,7 @@ export function ScheduleList({
 				ListHeaderComponent={header ? <>{header}</> : undefined}
 				ListEmptyComponent={
 					<EmptyState
-						icon="sf:wifi.exclamationmark"
+						icon="wifi.exclamationmark"
 						title="Failed to load schedule"
 						message="Check your connection and try again."
 						actionLabel="Retry"
@@ -78,7 +78,7 @@ export function ScheduleList({
 			)}
 			ListEmptyComponent={
 				<EmptyState
-					icon="sf:calendar.badge.exclamationmark"
+					icon="calendar.badge.exclamationmark"
 					title="No shows scheduled"
 					message="Check back later for upcoming shows."
 				/>

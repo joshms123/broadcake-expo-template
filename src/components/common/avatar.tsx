@@ -44,7 +44,6 @@ export function Avatar({ uri, name = '?', size = 40, rounded = true }: AvatarPro
 					width: size,
 					height: size,
 					borderRadius,
-					borderCurve: 'continuous',
 				}}
 				accessible={false}
 			/>

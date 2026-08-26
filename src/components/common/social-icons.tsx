@@ -1,22 +1,22 @@
 import React from 'react'
 import { View, Pressable, Text } from 'react-native'
-import { Image } from 'expo-image'
 import * as WebBrowser from 'expo-web-browser'
 import { useTheme } from '@/contexts/theme-context'
 import { triggerHaptic } from '@/lib/format'
 import type { StationSocialLink } from '@techcake/broadcake-sdk'
+import { AppIcon, type AppIconName } from '@/components/common/app-icon'
 
-const PLATFORM_ICONS: Record<string, string> = {
-	instagram: 'sf:camera',
-	facebook: 'sf:hand.thumbsup',
-	x: 'sf:at',
-	mastodon: 'sf:bubble.left',
-	tiktok: 'sf:music.note',
-	youtube: 'sf:play.rectangle',
-	bluesky: 'sf:cloud',
-	threads: 'sf:at.circle',
-	discord: 'sf:bubble.left.and.bubble.right',
-	linkedin: 'sf:briefcase',
+const PLATFORM_ICONS: Record<string, AppIconName> = {
+	instagram: 'camera',
+	facebook: 'hand.thumbsup',
+	x: 'at',
+	mastodon: 'bubble.left',
+	tiktok: 'music.note',
+	youtube: 'play.rectangle',
+	bluesky: 'cloud',
+	threads: 'at.circle',
+	discord: 'bubble.left.and.bubble.right',
+	linkedin: 'briefcase',
 }
 
 interface SocialIconsProps {
@@ -41,13 +41,13 @@ export function SocialIcons({ links }: SocialIconsProps) {
 
 	return (
 		<View style={{ flexDirection: 'row', gap: 12, flexWrap: 'wrap' }}>
-			{links.map((link) => {
-				const icon = PLATFORM_ICONS[link.platform] ?? 'sf:globe'
+			{links.map((link, i) => {
+				const icon = PLATFORM_ICONS[link.platform] ?? 'globe'
 				const label = link.platform.charAt(0).toUpperCase() + link.platform.slice(1)
 
 				return (
 					<Pressable
-						key={link.platform}
+						key={i}
 						onPress={() => handlePress(link.url)}
 						accessibilityRole="link"
 						accessibilityLabel={`Visit ${label}`}
@@ -60,15 +60,7 @@ export function SocialIcons({ links }: SocialIconsProps) {
 							justifyContent: 'center',
 						}}
 					>
-						<Image
-							source={icon}
-							style={{
-								width: 20,
-								height: 20,
-								tintColor: theme.foreground,
-							}}
-							accessible={false}
-						/>
+						<AppIcon name={icon} size={20} color={theme.foreground} />
 					</Pressable>
 				)
 			})}

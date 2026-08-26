@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import { View, Text, ScrollView, Pressable, RefreshControl } from 'react-native'
-import { Image } from 'expo-image'
 import * as Haptics from 'expo-haptics'
 import Animated, { FadeIn } from 'react-native-reanimated'
 import { useTheme } from '@/contexts/theme-context'
@@ -13,6 +12,7 @@ import { SocialIcons } from '@/components/common/social-icons'
 import { Avatar } from '@/components/common/avatar'
 import { Badge } from '@/components/common/badge'
 import { ContactForm } from '@/components/modals/contact-form'
+import { AppIcon } from '@/components/common/app-icon'
 
 export default function ListenScreen() {
 	const { theme, colorScheme } = useTheme()
@@ -60,11 +60,7 @@ export default function ListenScreen() {
 							gap: 10,
 						}}
 					>
-						<Image
-							source="sf:wifi.exclamationmark"
-							style={{ width: 18, height: 18, tintColor: theme.dangerText }}
-							accessible={false}
-						/>
+						<AppIcon name="wifi.exclamationmark" size={18} color={theme.dangerText} />
 						<Text style={{ fontSize: 14, color: theme.dangerText, flex: 1 }}>
 							Failed to load station data. Pull to refresh.
 						</Text>
@@ -119,7 +115,7 @@ export default function ListenScreen() {
 							<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
 								<View style={{ flexDirection: 'row' }}>
 									{nowPlaying.now.presenters.slice(0, 3).map((p, i) => (
-										<View key={p.name} style={{ marginLeft: i > 0 ? -8 : 0, zIndex: 3 - i }}>
+										<View key={i} style={{ marginLeft: i > 0 ? -8 : 0, zIndex: 3 - i }}>
 											<Avatar name={p.name} size={28} />
 										</View>
 									))}
@@ -155,11 +151,7 @@ export default function ListenScreen() {
 							gap: 8,
 						}}
 					>
-						<Image
-							source="sf:moon.stars"
-							style={{ width: 32, height: 32, tintColor: theme.mutedForeground }}
-							accessible={false}
-						/>
+						<AppIcon name="moon.stars" size={32} color={theme.mutedForeground} />
 						<Text style={{ fontSize: 16, fontWeight: '600', color: theme.foreground }}>
 							Off Air
 						</Text>
@@ -238,11 +230,7 @@ export default function ListenScreen() {
 							borderColor: theme.border,
 						}}
 					>
-						<Image
-							source="sf:envelope"
-							style={{ width: 18, height: 18, tintColor: theme.foreground }}
-							accessible={false}
-						/>
+						<AppIcon name="envelope" size={18} color={theme.foreground} />
 						<Text style={{ fontSize: 15, fontWeight: '600', color: theme.foreground }}>
 							Message the Station
 						</Text>

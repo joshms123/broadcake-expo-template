@@ -8,7 +8,6 @@ export const config: BroadcakeAppConfig = {
 	nowPlayingInterval: 30_000,
 	...rawConfig,
 	features: {
-		notifications: true,
 		contactForm: true,
 		...rawConfig.features,
 	},

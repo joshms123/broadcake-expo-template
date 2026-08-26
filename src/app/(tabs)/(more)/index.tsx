@@ -1,229 +1,161 @@
 import React from 'react'
-import { View, Text, ScrollView, Pressable, Switch } from 'react-native'
-import { Image } from 'expo-image'
+import { View, Text, ScrollView, Pressable } from 'react-native'
 import * as WebBrowser from 'expo-web-browser'
 import * as Haptics from 'expo-haptics'
+import { Host, Icon, List, ListItem, Picker, Switch } from '@expo/ui'
 import { useTheme } from '@/contexts/theme-context'
 import { useStation } from '@/hooks/use-station'
-import { useNotifications } from '@/hooks/use-notifications'
 import { usePlayer } from '@/contexts/player-context'
 import { config } from '@/lib/config'
-import { StreamSelector } from '@/components/player/stream-selector'
+import { AppIcon, appIcon } from '@/components/common/app-icon'
 
-const LEAD_TIME_OPTIONS = [15, 30, 60]
-
+/**
+ * Settings, drawn by the platform.
+ *
+ * The controls here are `@expo/ui` — real SwiftUI rows on iOS and Jetpack
+ * Compose on Android — rather than Views styled to look like them. A settings
+ * screen is the case those components exist for, and two things came free with
+ * the switch: the rows get the platform's own grouping, separators and press
+ * behaviour, and stream quality stopped being a horizontal chip carousel that
+ * clipped inside a padded card, which is not how any platform presents a choice
+ * between three options.
+ *
+ * `List` is deliberate here and would be wrong on the schedule: it renders
+ * native grouped rows and does not recycle them, so it suits a short fixed set
+ * and not a day's worth of programmes.
+ */
 export default function MoreScreen() {
 	const { theme, colorScheme, toggleTheme } = useTheme()
 	const { data: station } = useStation()
-	const { preferences, leadTimeMinutes, setLeadTime } = useNotifications()
 	const { selectedStream, selectStream } = usePlayer()
 
 	const streams = station?.streams ?? []
-	const activeNotifications = Object.values(preferences).filter((p) => p.enabled)
 
 	return (
 		<ScrollView
 			style={{ flex: 1, backgroundColor: theme.background }}
-			contentContainerStyle={{ padding: 16, gap: 24, paddingBottom: 48 }}
+			contentContainerStyle={{ paddingBottom: 48 }}
 			contentInsetAdjustmentBehavior="automatic"
 		>
-			{/* Appearance */}
-			<Section title="Appearance">
-				<View
-					style={{
-						flexDirection: 'row',
-						justifyContent: 'space-between',
-						alignItems: 'center',
-					}}
-				>
-					<View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-						<Image
-							source={colorScheme === 'dark' ? 'sf:moon.fill' : 'sf:sun.max.fill'}
-							style={{ width: 20, height: 20, tintColor: theme.foreground }}
-							accessible={false}
-						/>
-						<Text style={{ fontSize: 15, color: theme.foreground }}>
-							{colorScheme === 'dark' ? 'Dark Mode' : 'Light Mode'}
-						</Text>
-					</View>
-					<Switch
-						value={colorScheme === 'dark'}
-						onValueChange={() => {
+			<Host matchContents>
+				<List>
+					<ListItem
+						/* Icon, not AppIcon: this is already inside a Host, and AppIcon
+						   brings its own — one Host must not nest in another. */
+						leading={
+							<Icon
+								name={appIcon(colorScheme === 'dark' ? 'moon.fill' : 'sun.max.fill')}
+								size={20}
+								color={theme.foreground}
+							/>
+						}
+						trailing={
+							<Switch
+								value={colorScheme === 'dark'}
+								onValueChange={() => {
+									if (process.env.EXPO_OS === 'ios') {
+										Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+									}
+									toggleTheme()
+								}}
+								label="Dark mode"
+							/>
+						}
+					>
+						Dark mode
+					</ListItem>
+				</List>
+			</Host>
+
+			{streams.length > 1 && (
+				<>
+					{/* Outside the Host: a Host wraps a native tree, and a React Native
+					    Text is not part of one. Picker carries no label of its own, so
+					    the section heading is ours to draw. */}
+					<Text
+						style={{
+							fontSize: 13,
+							fontWeight: '600',
+							color: theme.mutedForeground,
+							textTransform: 'uppercase',
+							letterSpacing: 0.5,
+							paddingHorizontal: 16,
+							paddingBottom: 8,
+						}}
+						accessibilityRole="header"
+					>
+						Stream quality
+					</Text>
+					<Host matchContents>
+					<Picker
+						selectedValue={selectedStream?.url ?? streams[0].url}
+						onValueChange={(url) => {
+							const stream = streams.find((s) => s.url === url)
+							if (!stream) return
 							if (process.env.EXPO_OS === 'ios') {
 								Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
 							}
-							toggleTheme()
+							selectStream(stream)
 						}}
-						accessibilityLabel="Toggle dark mode"
-					/>
-				</View>
-			</Section>
-
-			{/* Audio */}
-			{streams.length > 1 && (
-				<Section title="Audio">
-					<StreamSelector
-						streams={streams}
-						selectedUrl={selectedStream?.url ?? null}
-						onSelect={(stream) => selectStream(stream, streams)}
-					/>
-				</Section>
-			)}
-
-			{/* Notifications */}
-			{config.features?.notifications !== false && (
-				<Section title="Notifications">
-					<View style={{ gap: 16 }}>
-						{/* Lead time */}
-						<View style={{ gap: 8 }}>
-							<Text style={{ fontSize: 14, color: theme.mutedForeground }}>
-								Notify me before a show starts
-							</Text>
-							<View style={{ flexDirection: 'row', gap: 8 }}>
-								{LEAD_TIME_OPTIONS.map((mins) => (
-									<Pressable
-										key={mins}
-										onPress={() => {
-											if (process.env.EXPO_OS === 'ios') {
-												Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-											}
-											setLeadTime(mins)
-										}}
-										accessibilityRole="button"
-										accessibilityLabel={`${mins} minutes before`}
-										accessibilityState={{ selected: leadTimeMinutes === mins }}
-										style={{
-											flex: 1,
-											paddingVertical: 10,
-											borderRadius: 8,
-											borderCurve: 'continuous',
-											backgroundColor: leadTimeMinutes === mins ? theme.primary : theme.secondary,
-											borderWidth: 1,
-											borderColor: leadTimeMinutes === mins ? theme.primary : theme.border,
-											alignItems: 'center',
-										}}
-									>
-										<Text
-											style={{
-												fontSize: 14,
-												fontWeight: '500',
-												color: leadTimeMinutes === mins ? theme.primaryForeground : theme.foreground,
-											}}
-										>
-											{mins}m
-										</Text>
-									</Pressable>
-								))}
-							</View>
-						</View>
-
-						{/* Active notifications */}
-						{activeNotifications.length > 0 && (
-							<View style={{ gap: 8 }}>
-								<Text style={{ fontSize: 13, fontWeight: '600', color: theme.mutedForeground, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-									Active ({activeNotifications.length})
-								</Text>
-								{activeNotifications.map((pref) => (
-									<View
-										key={`${pref.showSlug}-${pref.dayOfWeek}-${pref.startTime}`}
-										style={{
-											flexDirection: 'row',
-											alignItems: 'center',
-											gap: 10,
-											padding: 10,
-											backgroundColor: theme.secondary,
-											borderRadius: 8,
-											borderCurve: 'continuous',
-										}}
-									>
-										<Image
-											source="sf:bell.fill"
-											style={{ width: 16, height: 16, tintColor: theme.primary }}
-											accessible={false}
-										/>
-										<Text style={{ fontSize: 14, color: theme.foreground, flex: 1 }}>
-											{pref.showName}
-										</Text>
-									</View>
-								))}
-							</View>
-						)}
-
-						{activeNotifications.length === 0 && (
-							<Text style={{ fontSize: 14, color: theme.mutedForeground }}>
-								No show notifications set. Tap a show in the schedule to enable.
-							</Text>
-						)}
-					</View>
-				</Section>
-			)}
-
-			{/* About */}
-			<Section title="About">
-				<View style={{ gap: 12 }}>
-					<Text style={{ fontSize: 17, fontWeight: '600', color: theme.foreground }}>
-						{config.name ?? station?.name ?? 'Station'}
-					</Text>
-					{config.tagline && (
-						<Text style={{ fontSize: 14, color: theme.mutedForeground }}>
-							{config.tagline}
-						</Text>
-					)}
-					<Pressable
-						onPress={() => WebBrowser.openBrowserAsync('https://broadcake.com')}
-						accessibilityRole="link"
-						accessibilityLabel="Powered by Broadcake"
-						style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}
+						appearance="menu"
 					>
-						<Text style={{ fontSize: 13, color: theme.mutedForeground }}>
-							Powered by Broadcake
-						</Text>
-						<Image
-							source="sf:arrow.up.right"
-							style={{ width: 10, height: 10, tintColor: theme.mutedForeground }}
-							accessible={false}
-						/>
-					</Pressable>
-				</View>
-			</Section>
-		</ScrollView>
-	)
-}
+						{streams.map((stream, i) => (
+							<Picker.Item
+								// Position, not url: nothing constrains stream urls to be
+								// unique, and two identical ones would collide as keys.
+								key={i}
+								label={
+									stream.bitrate ? `${stream.name} (${stream.bitrate}kbps)` : stream.name
+								}
+								value={stream.url}
+							/>
+						))}
+					</Picker>
+					</Host>
+				</>
+			)}
 
-function Section({
-	title,
-	children,
-}: {
-	title: string
-	children: React.ReactNode
-}) {
-	const { theme } = useTheme()
-	return (
-		<View style={{ gap: 12 }}>
-			<Text
-				style={{
-					fontSize: 13,
-					fontWeight: '600',
-					color: theme.foreground,
-					textTransform: 'uppercase',
-					letterSpacing: 0.5,
-				}}
-				accessibilityRole="header"
-			>
-				{title}
-			</Text>
-			<View
-				style={{
-					backgroundColor: theme.card,
-					borderRadius: 12,
-					borderCurve: 'continuous',
-					padding: 16,
-					borderWidth: 1,
-					borderColor: theme.border,
-				}}
-			>
-				{children}
+			{/* Prose and a link rather than controls, so this stays plain React
+			    Native — there is no native row type that says it better. */}
+			<View style={{ padding: 16, gap: 12 }}>
+				<Text
+					style={{
+						fontSize: 13,
+						fontWeight: '600',
+						color: theme.mutedForeground,
+						textTransform: 'uppercase',
+						letterSpacing: 0.5,
+					}}
+					accessibilityRole="header"
+				>
+					About
+				</Text>
+				<Text style={{ fontSize: 17, fontWeight: '600', color: theme.foreground }}>
+					{config.name ?? station?.name ?? 'Station'}
+				</Text>
+				{config.tagline && (
+					<Text style={{ fontSize: 14, color: theme.mutedForeground }}>{config.tagline}</Text>
+				)}
+				<Pressable
+					onPress={() => WebBrowser.openBrowserAsync('https://broadcake.com')}
+					accessibilityRole="link"
+					accessibilityLabel="Powered by Broadcake"
+					hitSlop={12}
+					style={({ pressed }) => ({
+						flexDirection: 'row',
+						alignItems: 'center',
+						gap: 6,
+						marginTop: 4,
+						minHeight: 44,
+						opacity: pressed ? 0.6 : 1,
+					})}
+				>
+					<Text style={{ fontSize: 13, color: theme.mutedForeground }}>
+						Powered by Broadcake
+					</Text>
+					<AppIcon name="arrow.up.right" size={10} color={theme.mutedForeground} />
+				</Pressable>
 			</View>
-		</View>
+		</ScrollView>
 	)
 }
