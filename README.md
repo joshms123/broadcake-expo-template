@@ -37,6 +37,10 @@ A cloneable Expo React Native app for radio station listeners. Customize with yo
 
 3. **Update `app.json`** with your app name, slug, bundle identifiers, and icons.
 
+   Your icon doubles as the artwork on the on-air and up-next cards, so
+   replacing it is enough. Set `logo` in `broadcake.config.ts` only if in-app
+   artwork should differ from the launcher icon.
+
 4. **Install dependencies** (from the monorepo root):
    ```bash
    npm install
@@ -59,6 +63,7 @@ All configuration is in `broadcake.config.ts`:
 | `baseUrl` | `string` | `https://app.broadcake.com` | API base URL |
 | `name` | `string` | — | Display name on home screen |
 | `tagline` | `string` | — | Subtitle below station name |
+| `logo` | `ImageSourcePropType` | app icon | Artwork on the on-air and up-next cards |
 | `theme.light.primary` | `string` | `#0f172b` | Light theme accent color (hex) |
 | `theme.dark.primary` | `string` | `#f8fafc` | Dark theme accent color (hex) |
 | `features.contactForm` | `boolean` | `true` | Show "Message the Station" button |

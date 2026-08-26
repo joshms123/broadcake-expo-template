@@ -7,6 +7,7 @@ import { useShowSchedule } from '@/hooks/use-show-schedule'
 import { formatTime } from '@/lib/format'
 import { Avatar } from '@/components/common/avatar'
 import { Badge } from '@/components/common/badge'
+import { MarkdownText } from '@/components/common/markdown-text'
 import { PresenterDetail } from './presenter-detail'
 
 const DAY_NAMES = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -75,15 +76,17 @@ export function ShowDetail({ visible, onClose, showSlug, showName }: ShowDetailP
 						</Pressable>
 					</View>
 
+					{/* `never`, not the iOS default of `automatic`: that adjustment
+					    exists for a scroll view under a navigation bar, and inside a
+					    sheet there is none to inset for. Left on, the content came up
+					    offset -- the top of the description was simply not there. */}
 					<ScrollView
+						contentInsetAdjustmentBehavior="never"
+						automaticallyAdjustContentInsets={false}
 						contentContainerStyle={{ padding: 16, gap: 20, paddingBottom: 32 }}
 					>
-						{/* Description */}
-						{show?.description && (
-							<Text style={{ fontSize: 15, color: theme.foreground, lineHeight: 22 }}>
-								{show.description}
-							</Text>
-						)}
+						{/* Description -- markdown, as the station website renders it */}
+						<MarkdownText>{show?.description}</MarkdownText>
 
 						{/* Presenters */}
 						{show?.presenters && show.presenters.length > 0 && (

@@ -1,9 +1,9 @@
 import React from 'react'
 import { View, Pressable } from 'react-native'
 import { Image } from 'expo-image'
-import * as WebBrowser from 'expo-web-browser'
 import { useTheme } from '@/contexts/theme-context'
 import { triggerHaptic } from '@/lib/format'
+import { openLink } from '@/lib/links'
 import type { StationSocialLink } from '@techcake/broadcake-sdk'
 import { AppIcon, type AppIconName } from '@/components/common/app-icon'
 import { BRAND_MARKS } from '@/components/common/social-marks'
@@ -43,14 +43,8 @@ export function SocialIcons({ links }: SocialIconsProps) {
 	if (links.length === 0) return null
 
 	const handlePress = (url: string) => {
-		try {
-			const parsed = new URL(url)
-			if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return
-		} catch {
-			return
-		}
 		triggerHaptic()
-		WebBrowser.openBrowserAsync(url)
+		openLink(url)
 	}
 
 	return (

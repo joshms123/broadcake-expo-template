@@ -1,13 +1,13 @@
 import React from 'react'
-import { View, Text, ScrollView, Pressable } from 'react-native'
-import * as WebBrowser from 'expo-web-browser'
+import { View, Text, ScrollView } from 'react-native'
 import * as Haptics from 'expo-haptics'
 import { Host, Icon, List, ListItem, Picker, Switch } from '@expo/ui'
 import { useTheme } from '@/contexts/theme-context'
 import { useStation } from '@/hooks/use-station'
 import { usePlayer } from '@/contexts/player-context'
 import { config } from '@/lib/config'
-import { AppIcon, appIcon } from '@/components/common/app-icon'
+import { appIcon } from '@/components/common/app-icon'
+import { openLink } from '@/lib/links'
 
 /**
  * Settings, drawn by the platform.
@@ -24,6 +24,15 @@ import { AppIcon, appIcon } from '@/components/common/app-icon'
  * native grouped rows and does not recycle them, so it suits a short fixed set
  * and not a day's worth of programmes.
  */
+/** `https://anchor.radio/listen` -> `anchor.radio`, for the row's subtitle. */
+function hostOf(url: string): string {
+	try {
+		return new URL(url).host.replace(/^www\./, '')
+	} catch {
+		return url
+	}
+}
+
 export default function MoreScreen() {
 	const { theme, colorScheme, toggleTheme } = useTheme()
 	const { data: station } = useStation()
@@ -115,8 +124,8 @@ export default function MoreScreen() {
 				</>
 			)}
 
-			{/* Prose and a link rather than controls, so this stays plain React
-			    Native — there is no native row type that says it better. */}
+			{/* Prose, so this part stays plain React Native — there is no native
+			    row type that says a name and a tagline better. */}
 			<View style={{ padding: 16, gap: 12 }}>
 				<Text
 					style={{
@@ -136,26 +145,33 @@ export default function MoreScreen() {
 				{config.tagline && (
 					<Text style={{ fontSize: 14, color: theme.mutedForeground }}>{config.tagline}</Text>
 				)}
-				<Pressable
-					onPress={() => WebBrowser.openBrowserAsync('https://broadcake.com')}
-					accessibilityRole="link"
-					accessibilityLabel="Powered by Broadcake"
-					hitSlop={12}
-					style={({ pressed }) => ({
-						flexDirection: 'row',
-						alignItems: 'center',
-						gap: 6,
-						marginTop: 4,
-						minHeight: 44,
-						opacity: pressed ? 0.6 : 1,
-					})}
-				>
-					<Text style={{ fontSize: 13, color: theme.mutedForeground }}>
-						Powered by Broadcake
-					</Text>
-					<AppIcon name="arrow.up.right" size={10} color={theme.mutedForeground} />
-				</Pressable>
 			</View>
+
+			{/*
+			  The station's own site, where "Powered by Broadcake" used to be.
+			
+			  A template that stations clone and ship under their own name should
+			  not make them carry someone else's on a screen their listeners see.
+			  The address is the station's `listen_url` from the dashboard rather
+			  than a field here, so there is one place to change it and it is one
+			  they already own. No URL set, no row.
+			*/}
+			{station?.listen_url && (
+				<Host matchContents>
+					<List>
+						<ListItem
+							leading={<Icon name={appIcon('globe')} size={20} color={theme.foreground} />}
+							trailing={
+								<Icon name={appIcon('arrow.up.right')} size={12} color={theme.mutedForeground} />
+							}
+							supportingText={hostOf(station.listen_url)}
+							onPress={() => openLink(station.listen_url)}
+						>
+							Website
+						</ListItem>
+					</List>
+				</Host>
+			)}
 		</ScrollView>
 	)
 }

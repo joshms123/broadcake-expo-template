@@ -4,6 +4,8 @@ import { BottomSheet, RNHostView } from '@expo/ui'
 import { useTheme } from '@/contexts/theme-context'
 import { usePresenter } from '@/hooks/use-presenter'
 import { Avatar } from '@/components/common/avatar'
+import { MarkdownText } from '@/components/common/markdown-text'
+import { stripMarkdown } from '@/lib/markdown'
 
 interface PresenterDetailProps {
 	visible: boolean
@@ -75,7 +77,15 @@ export function PresenterDetail({ visible, onClose, presenterSlug }: PresenterDe
 						</Pressable>
 					</View>
 
-					<ScrollView contentContainerStyle={{ padding: 16, gap: 20, paddingBottom: 32 }}>
+					{/* `never`, not the iOS default of `automatic`: that adjustment
+					    exists for a scroll view under a navigation bar, and inside a
+					    sheet there is none to inset for. Left on, the content came up
+					    offset -- the top of the description was simply not there. */}
+					<ScrollView
+						contentInsetAdjustmentBehavior="never"
+						automaticallyAdjustContentInsets={false}
+						contentContainerStyle={{ padding: 16, gap: 20, paddingBottom: 32 }}
+					>
 						{/* Avatar + name */}
 						<View style={{ alignItems: 'center', gap: 12 }}>
 							<Avatar
@@ -96,11 +106,7 @@ export function PresenterDetail({ visible, onClose, presenterSlug }: PresenterDe
 						</View>
 
 						{/* Bio */}
-						{presenter?.bio && (
-							<Text style={{ fontSize: 15, color: theme.foreground, lineHeight: 22 }}>
-								{presenter.bio}
-							</Text>
-						)}
+						<MarkdownText>{presenter?.bio}</MarkdownText>
 
 						{/* Shows */}
 						{presenter?.shows && presenter.shows.length > 0 && (
@@ -126,11 +132,13 @@ export function PresenterDetail({ visible, onClose, presenterSlug }: PresenterDe
 											{show.name}
 										</Text>
 										{show.description && (
+											// Two lines with no room to format, so the markers come
+											// off rather than being rendered or shown raw.
 											<Text
 												style={{ fontSize: 13, color: theme.mutedForeground }}
 												numberOfLines={2}
 											>
-												{show.description}
+												{stripMarkdown(show.description)}
 											</Text>
 										)}
 									</View>

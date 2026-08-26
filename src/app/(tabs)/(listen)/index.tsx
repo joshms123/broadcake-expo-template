@@ -10,6 +10,7 @@ import { formatTime, getPresenters, slotSentence, triggerHaptic } from '@/lib/fo
 import { PlayButton } from '@/components/player/play-button'
 import { SocialIcons } from '@/components/common/social-icons'
 import { Avatar } from '@/components/common/avatar'
+import { Artwork, ArtworkWithOverlay } from '@/components/common/artwork'
 import { Badge } from '@/components/common/badge'
 import { ContactForm } from '@/components/modals/contact-form'
 import { AppIcon } from '@/components/common/app-icon'
@@ -35,7 +36,10 @@ export default function ListenScreen() {
 		<>
 			<ScrollView
 				style={{ flex: 1, backgroundColor: theme.background }}
-				contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 32 }}
+				// flexGrow so the content area fills the screen even when it is
+				// shorter than one, which is what lets the social row sit at the
+				// bottom rather than trailing the cards with a void beneath it.
+				contentContainerStyle={{ padding: 16, gap: 20, paddingBottom: 48, flexGrow: 1 }}
 				contentInsetAdjustmentBehavior="automatic"
 				refreshControl={
 					<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -87,15 +91,40 @@ export default function ListenScreen() {
 							padding: 16,
 							borderWidth: 1,
 							borderColor: theme.infoText,
-							flexDirection: 'row',
-							alignItems: 'center',
-							gap: 14,
+							gap: 12,
 							boxShadow: colorScheme === 'dark'
 								? '0 2px 8px rgba(0,0,0,0.4)'
 								: '0 2px 8px rgba(0,0,0,0.08)',
 						}}
 					>
-						<PlayButton streams={streams} size={52} />
+						{/* Across the top of the card, not indented past the play button.
+						    Hidden from accessibility: the sentence below already opens
+						    with "On air", so announcing this too would repeat it. */}
+						<View
+							style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+							accessibilityElementsHidden
+							importantForAccessibility="no-hide-descendants"
+						>
+							<View
+								style={{
+									width: 8,
+									height: 8,
+									borderRadius: 4,
+									backgroundColor: '#22c55e',
+								}}
+							/>
+							<Text style={{ fontSize: 12, fontWeight: '600', color: theme.mutedForeground, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+								On Air Now
+							</Text>
+						</View>
+
+						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+						{/* The play control sits on the artwork rather than beside it.
+						    Beside it, the artwork and a 56pt button together left the
+						    show name about 140pt to wrap in. */}
+						<ArtworkWithOverlay size={88}>
+							<PlayButton streams={streams} size={52} />
+						</ArtworkWithOverlay>
 
 						{/* One element, one sentence — see slotSentence above. */}
 						<View
@@ -104,20 +133,6 @@ export default function ListenScreen() {
 							accessibilityRole="summary"
 							accessibilityLabel={slotSentence(nowPlaying.now, 'On air')}
 						>
-							<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-								<View
-									style={{
-										width: 8,
-										height: 8,
-										borderRadius: 4,
-										backgroundColor: '#22c55e',
-									}}
-								/>
-								<Text style={{ fontSize: 12, fontWeight: '600', color: theme.mutedForeground, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-									On Air Now
-								</Text>
-							</View>
-
 							<Text style={{ fontSize: 20, fontWeight: '700', color: theme.foreground }}>
 								{nowPlaying.now.show_name}
 							</Text>
@@ -149,6 +164,7 @@ export default function ListenScreen() {
 								</View>
 							)}
 						</View>
+						</View>
 					</Animated.View>
 				) : (
 					<View
@@ -165,7 +181,9 @@ export default function ListenScreen() {
 						}}
 					>
 						{/* Off air is not off stream — automation is still playing. */}
-						<PlayButton streams={streams} size={52} />
+						<ArtworkWithOverlay size={88}>
+							<PlayButton streams={streams} size={52} />
+						</ArtworkWithOverlay>
 
 						<View
 							style={{ flex: 1, gap: 6 }}
@@ -209,14 +227,18 @@ export default function ListenScreen() {
 							borderRadius: 12,
 							borderCurve: 'continuous',
 							padding: 16,
-							gap: 8,
+							gap: 12,
 							borderWidth: 1,
 							borderColor: theme.border,
+							flexDirection: 'row',
+							alignItems: 'center',
 						}}
 						accessible
 						accessibilityRole="summary"
 						accessibilityLabel={slotSentence(nowPlaying.next, 'Up next')}
 					>
+						<Artwork size={56} radius={8} />
+						<View style={{ flex: 1, gap: 8 }}>
 						<Text style={{ fontSize: 12, fontWeight: '600', color: theme.mutedForeground, textTransform: 'uppercase', letterSpacing: 0.5 }}>
 							Up Next
 						</Text>
@@ -231,9 +253,14 @@ export default function ListenScreen() {
 						<Text style={{ fontSize: 13, color: theme.mutedForeground, fontVariant: ['tabular-nums'] }}>
 							{formatTime(nowPlaying.next.slot_start)} – {formatTime(nowPlaying.next.slot_end)}
 						</Text>
+						</View>
 					</View>
 				)}
 
+				{/* Pushed to the bottom by the auto margin, which absorbs whatever
+				    space is left over. When the cards are tall enough to fill the
+				    screen there is none, and this just follows them. */}
+				<View style={{ marginTop: 'auto', gap: 20 }}>
 				{/* Social Links */}
 				{socialLinks.length > 0 && (
 					<View style={{ gap: 10 }}>
@@ -276,6 +303,7 @@ export default function ListenScreen() {
 						</Text>
 					</Pressable>
 				)}
+				</View>
 			</ScrollView>
 
 			{/* Contact Form Modal */}
