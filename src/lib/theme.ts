@@ -30,7 +30,7 @@ export interface Theme {
 }
 
 const baseLightTheme: Theme = {
-	background: '#ffffff',
+	background: '#f8fafc',
 	foreground: '#090911',
 	card: '#ffffff',
 	cardForeground: '#090911',
@@ -61,7 +61,7 @@ const baseLightTheme: Theme = {
 const baseDarkTheme: Theme = {
 	background: '#090911',
 	foreground: '#f8fafc',
-	card: '#090911',
+	card: '#141726',
 	cardForeground: '#f8fafc',
 	primary: '#f8fafc',
 	primaryForeground: '#0f172b',
@@ -85,6 +85,20 @@ const baseDarkTheme: Theme = {
 	infoBg: 'rgba(99, 102, 241, 0.2)',
 	infoText: '#a5b4fc',
 	shadowColor: 'rgba(0, 0, 0, 0.4)',
+}
+
+/**
+ * A theme colour at partial opacity, for glows and scrims.
+ *
+ * The alternative is a second hardcoded rgba() beside every token, which is how
+ * the schedule ended up glowing indigo on a green station: the border followed
+ * the theme and the glow behind it did not.
+ */
+export function withAlpha(hex: string, alpha: number): string {
+	const m = /^#([0-9a-f]{6})$/i.exec(hex)
+	if (!m) return hex
+	const n = parseInt(m[1], 16)
+	return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`
 }
 
 // Apply config theme overrides

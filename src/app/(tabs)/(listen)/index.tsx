@@ -99,7 +99,10 @@ export default function ListenScreen() {
 							borderCurve: 'continuous',
 							padding: 16,
 							borderWidth: 1,
-							borderColor: theme.infoText,
+							// The live card wears the station's colour. It was `infoText`,
+							// which is indigo -- the one accented thing on the home screen
+							// of a green-and-navy station, and nobody chose it.
+							borderColor: theme.primary,
 							gap: 12,
 							boxShadow: colorScheme === 'dark'
 								? '0 2px 8px rgba(0,0,0,0.4)'
@@ -114,12 +117,15 @@ export default function ListenScreen() {
 							accessibilityElementsHidden
 							importantForAccessibility="no-hide-descendants"
 						>
+							{/* The only hardcoded colour in this file was here: a #22c55e dot
+							    beside a play button in the station's own green, which were
+							    never going to match. */}
 							<View
 								style={{
 									width: 8,
 									height: 8,
 									borderRadius: 4,
-									backgroundColor: '#22c55e',
+									backgroundColor: theme.primary,
 								}}
 							/>
 							<Text style={{ fontSize: 12, fontWeight: '600', color: theme.mutedForeground, textTransform: 'uppercase', letterSpacing: 0.5 }}>

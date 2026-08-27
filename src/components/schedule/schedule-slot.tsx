@@ -2,6 +2,7 @@ import React from 'react'
 import { View, Text, Pressable } from 'react-native'
 import type { ScheduleSlot as ScheduleSlotType } from '@techcake/broadcake-sdk'
 import { useTheme } from '@/contexts/theme-context'
+import { withAlpha } from '@/lib/theme'
 import { formatTime, getPresenters, slotSentence } from '@/lib/format'
 import { Avatar } from '@/components/common/avatar'
 import { Badge } from '@/components/common/badge'
@@ -37,13 +38,13 @@ export const ScheduleSlot = React.memo(function ScheduleSlot({ slot, isNowPlayin
 				padding: 14,
 				gap: 8,
 				borderWidth: 1,
-				borderColor: isNowPlaying ? theme.infoText : theme.border,
+				borderColor: isNowPlaying ? theme.primary : theme.border,
 				borderStyle: isAutomation ? 'dashed' : 'solid',
 				opacity: isCancelled ? 0.5 : 1,
 				boxShadow: isNowPlaying
 					? colorScheme === 'dark'
-						? '0 0 12px rgba(99,102,241,0.3)'
-						: '0 0 12px rgba(99,102,241,0.15)'
+						? `0 0 12px ${withAlpha(theme.primary, 0.3)}`
+						: `0 0 12px ${withAlpha(theme.primary, 0.15)}`
 					: undefined,
 			}}
 		>
@@ -54,8 +55,10 @@ export const ScheduleSlot = React.memo(function ScheduleSlot({ slot, isNowPlayin
 				</Text>
 				{isNowPlaying && (
 					<View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-						<View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#22c55e' }} />
-						<Text style={{ fontSize: 11, fontWeight: '600', color: '#22c55e' }}>NOW</Text>
+						{/* Same green as the card's border and the play button, rather
+						    than a third one hardcoded here. */}
+						<View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: theme.primary }} />
+						<Text style={{ fontSize: 11, fontWeight: '600', color: theme.primary }}>NOW</Text>
 					</View>
 				)}
 			</View>

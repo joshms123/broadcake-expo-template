@@ -106,6 +106,28 @@ packages/app-template/
 - `boxShadow` CSS prop for shadows
 - `contentInsetAdjustmentBehavior="automatic"` on ScrollView/FlatList
 
+### Colour
+- **Three surfaces, and they must differ.** `background` → `card` → `secondary`
+  is the elevation ramp: page, card, chip. Dark mode had `card` *equal to*
+  `background`, so a card was its 1px border and nothing else — measured at
+  1.00:1 on a device. Light mode had the same fault. It is now
+  `#090911 → #141726 → #1B2532` and `#F8FAFC → #FFFFFF → #F1F5F9`. Keep `card`
+  clear of `secondary` too, or badges and avatars vanish on top of a card.
+- **"On air" wears `theme.primary`, not `infoText`.** `infoText` is indigo, and
+  it was the accent on the live card and the now-playing schedule row — the only
+  coloured thing on the home screen of a green-and-navy station, chosen by
+  nobody. `infoText` is for `Badge`, which is genuinely informational.
+- **No hardcoded colours in a screen.** There were three `#22c55e` literals —
+  the on-air dot and the schedule's NOW pip and label — sitting beside a play
+  button in the station's configured green, so one card carried three greens
+  that could never agree. Use `withAlpha()` from `$lib/theme` for glows and
+  scrims rather than a matching `rgba()` literal, which is how the schedule's
+  border followed the theme while its glow stayed indigo.
+- **A configured brand colour is not guaranteed to be accessible.** Anchor's
+  light green on white is 3.46:1 — fine for a border or a dot, short of the
+  4.5:1 that 11px text wants. Small text in `primary` is worth checking per
+  station, or drawing in `foreground` with `primary` left to carry the graphic.
+
 ### Native controls
 Reach for `@expo/ui` before styling a View to look like a control. The More tab
 is the worked example: its rows are `List` / `ListItem` with a real `Switch`, and
