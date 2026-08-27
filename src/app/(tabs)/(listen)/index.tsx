@@ -48,7 +48,7 @@ export default function ListenScreen() {
 				// across it, so the scroll view's frame already stops above the bar
 				// and `flexGrow: 1` measures the visible height. That is what makes
 				// the auto margin below land where you can see it.
-				contentContainerStyle={{ padding: 16, gap: 20, flexGrow: 1 }}
+				contentContainerStyle={{ padding: 16, gap: 20 }}
 				contentInsetAdjustmentBehavior="automatic"
 				refreshControl={
 					<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -270,54 +270,69 @@ export default function ListenScreen() {
 					</View>
 				)}
 
-				{/* The auto margin takes whatever space is left, so the links sit at
-				    the bottom of the reserved area and simply follow the cards when
-				    there is none left to take. */}
-				<View style={{ marginTop: 'auto', gap: 20 }}>
-				{/* Social Links */}
-				{socialLinks.length > 0 && (
-					<View style={{ gap: 10 }}>
-						<Text
-							style={{ fontSize: 13, fontWeight: '600', color: theme.mutedForeground, textTransform: 'uppercase', letterSpacing: 0.5 }}
-							accessibilityRole="header"
-						>
-							Follow Us
-						</Text>
-						<SocialIcons links={socialLinks} />
-					</View>
-				)}
-
-				{/* Contact button */}
-				{config.features?.contactForm && config.features?.contactFormSlug && (
-					<Pressable
-						onPress={() => {
-							triggerHaptic()
-							setContactFormVisible(true)
-						}}
-						accessibilityRole="button"
-						accessibilityLabel="Message the station"
-						style={({ pressed }) => ({
-							flexDirection: 'row',
-							alignItems: 'center',
-							justifyContent: 'center',
-							gap: 8,
-							paddingVertical: 14,
-							backgroundColor: theme.secondary,
-							borderRadius: 12,
-							borderCurve: 'continuous',
-							borderWidth: 1,
-							borderColor: theme.border,
-							opacity: pressed ? 0.75 : 1,
-						})}
-					>
-						<AppIcon name="envelope" size={18} color={theme.foreground} />
-						<Text style={{ fontSize: 15, fontWeight: '600', color: theme.foreground }}>
-							Message the Station
-						</Text>
-					</Pressable>
-				)}
-				</View>
 			</ScrollView>
+
+			{/*
+			  Outside the ScrollView, not pinned inside it.
+			
+			  Pinning within the scroll content cannot work here, and the reason is
+			  worth keeping: `contentInsetAdjustmentBehavior` puts a top inset on the
+			  content for the large title, while `flexGrow: 1` sizes the container to
+			  the scroll view's *frame*. The container therefore ends one top-inset
+			  below the visible bottom, and anything pinned to it goes with it -- the
+			  row rendered perfectly and sat off the end of the screen.
+			
+			  As a sibling inside the SafeAreaView it is bounded by the same box the
+			  bar stops at, so it needs no inset, no height and no arithmetic.
+			*/}
+			{(socialLinks.length > 0 ||
+				(config.features?.contactForm && config.features?.contactFormSlug)) && (
+				<View style={{ paddingHorizontal: 16, paddingTop: 4, paddingBottom: 12, gap: 16 }}>
+					{/* Social Links */}
+					{socialLinks.length > 0 && (
+						<View style={{ gap: 10 }}>
+							<Text
+								style={{ fontSize: 13, fontWeight: '600', color: theme.mutedForeground, textTransform: 'uppercase', letterSpacing: 0.5 }}
+								accessibilityRole="header"
+							>
+								Follow Us
+							</Text>
+							<SocialIcons links={socialLinks} />
+						</View>
+					)}
+
+					{/* Contact button */}
+					{config.features?.contactForm && config.features?.contactFormSlug && (
+						<Pressable
+							onPress={() => {
+								triggerHaptic()
+								setContactFormVisible(true)
+							}}
+							accessibilityRole="button"
+							accessibilityLabel="Message the station"
+							style={({ pressed }) => ({
+								flexDirection: 'row',
+								alignItems: 'center',
+								justifyContent: 'center',
+								gap: 8,
+								paddingVertical: 14,
+								backgroundColor: theme.secondary,
+								borderRadius: 12,
+								borderCurve: 'continuous',
+								borderWidth: 1,
+								borderColor: theme.border,
+								opacity: pressed ? 0.75 : 1,
+							})}
+						>
+							<AppIcon name="envelope" size={18} color={theme.foreground} />
+							<Text style={{ fontSize: 15, fontWeight: '600', color: theme.foreground }}>
+								Message the Station
+							</Text>
+						</Pressable>
+					)}
+				</View>
+			)}
+
 
 			{/* Contact Form Modal */}
 			{config.features?.contactFormSlug && (

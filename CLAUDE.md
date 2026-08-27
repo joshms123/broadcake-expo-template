@@ -189,16 +189,25 @@ and the rest is text; hosting it keeps one layout instead of one per platform.
   the inset is applied twice, since expo-router already adjusts the first
   ScrollView on iOS.
 
-  Padding your way out does not work, and the failure is counter-intuitive
-  enough to be worth writing down. The bar's height cannot be measured — it is
-  drawn by native code outside the view tree, and `useBottomTabBarHeight` throws
-  under `NativeTabs` (expo-router provides that context only from the JavaScript
-  `BottomTabView`). Worse, `flexGrow: 1` takes the container's minHeight from
-  the ScrollView's *frame*, which extends under the bar, so `paddingBottom` grows
-  the container instead of lifting anything while `marginTop: 'auto'` pins to
-  that lower edge. Adding padding moved the row 19pt further **down** the screen.
-  Two attempts went that way before `references/tabs.md` in the `expo-router`
-  skill turned out to document the boundary approach.
+  **Put the thing being pinned outside the `ScrollView`**, as a sibling of it
+  inside the `SafeAreaView`. Pinning *within* the scroll content still fails even
+  with the boundary in place: `contentInsetAdjustmentBehavior` puts a top inset
+  on the content for the large title, while `flexGrow: 1` sizes the container to
+  the scroll view's *frame*, so the container ends one top-inset below the
+  visible bottom and `marginTop: 'auto'` follows it off the screen. That one
+  renders perfectly and is simply not on the display.
+
+  Padding your way out does not work either, and that failure is the
+  counter-intuitive one. The bar's height cannot be measured — it is drawn by
+  native code outside the view tree, and `useBottomTabBarHeight` throws under
+  `NativeTabs` (expo-router provides that context only from the JavaScript
+  `BottomTabView`). And because `flexGrow` is measuring the frame, adding
+  `paddingBottom` grows the container rather than lifting anything: it moved the
+  row 19pt further **down** the screen.
+
+  Three attempts went into this. `references/tabs.md` in the `expo-router` skill
+  documents the boundary half and is worth reading before touching tab-screen
+  layout.
 
 ### Sheets, continued
 - **`contentInsetAdjustmentBehavior="never"` on a `ScrollView` inside one.** The
