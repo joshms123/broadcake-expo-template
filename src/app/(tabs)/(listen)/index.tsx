@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { View, Text, ScrollView, Pressable, RefreshControl } from 'react-native'
 import Animated, { FadeIn } from 'react-native-reanimated'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTheme } from '@/contexts/theme-context'
 import { useStation } from '@/hooks/use-station'
 import { useNowPlaying } from '@/hooks/use-now-playing'
@@ -10,7 +11,7 @@ import { formatTime, getPresenters, slotSentence, triggerHaptic } from '@/lib/fo
 import { PlayButton } from '@/components/player/play-button'
 import { SocialIcons } from '@/components/common/social-icons'
 import { Avatar } from '@/components/common/avatar'
-import { Artwork, ArtworkWithOverlay } from '@/components/common/artwork'
+import { Artwork } from '@/components/common/artwork'
 import { Badge } from '@/components/common/badge'
 import { ContactForm } from '@/components/modals/contact-form'
 import { AppIcon } from '@/components/common/app-icon'
@@ -20,6 +21,7 @@ export default function ListenScreen() {
 	const { data: station, isError: stationError, refetch: refetchStation } = useStation()
 	const { data: nowPlaying, refetch: refetchNowPlaying } = useNowPlaying()
 	const { playerError } = usePlayer()
+	const insets = useSafeAreaInsets()
 	const [contactFormVisible, setContactFormVisible] = useState(false)
 	const [refreshing, setRefreshing] = useState(false)
 
@@ -39,7 +41,17 @@ export default function ListenScreen() {
 				// flexGrow so the content area fills the screen even when it is
 				// shorter than one, which is what lets the social row sit at the
 				// bottom rather than trailing the cards with a void beneath it.
-				contentContainerStyle={{ padding: 16, gap: 20, paddingBottom: 48, flexGrow: 1 }}
+				//
+				// The bottom padding clears the tab bar by hand. It floats over the
+				// content on iOS and `contentInsetAdjustmentBehavior` does not reserve
+				// space for it, so at 48 the social row sat behind it: the bar's top
+				// edge is ~81pt off the bottom of the screen and the icons ran to 26pt.
+				contentContainerStyle={{
+					padding: 16,
+					gap: 20,
+					paddingBottom: insets.bottom + 60,
+					flexGrow: 1,
+				}}
 				contentInsetAdjustmentBehavior="automatic"
 				refreshControl={
 					<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -119,12 +131,11 @@ export default function ListenScreen() {
 						</View>
 
 						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-						{/* The play control sits on the artwork rather than beside it.
-						    Beside it, the artwork and a 56pt button together left the
-						    show name about 140pt to wrap in. */}
-						<ArtworkWithOverlay size={88}>
-							<PlayButton streams={streams} size={52} />
-						</ArtworkWithOverlay>
+						{/* Beside the artwork, not on it. On it, a 52pt button over an 88pt
+						    tile left only a sliver of the logo showing, which defeated the
+						    point of putting it there. At 72 + 48 the title still has ~185pt,
+						    which fits it on one line. */}
+						<Artwork size={72} />
 
 						{/* One element, one sentence — see slotSentence above. */}
 						<View
@@ -164,6 +175,10 @@ export default function ListenScreen() {
 								</View>
 							)}
 						</View>
+
+						{/* Trailing edge: the summary is read before the control, which is
+						    the order that makes sense spoken -- what is on, then play it. */}
+						<PlayButton streams={streams} size={48} />
 						</View>
 					</Animated.View>
 				) : (
@@ -180,10 +195,7 @@ export default function ListenScreen() {
 							gap: 14,
 						}}
 					>
-						{/* Off air is not off stream — automation is still playing. */}
-						<ArtworkWithOverlay size={88}>
-							<PlayButton streams={streams} size={52} />
-						</ArtworkWithOverlay>
+						<Artwork size={72} />
 
 						<View
 							style={{ flex: 1, gap: 6 }}
@@ -207,6 +219,10 @@ export default function ListenScreen() {
 								</Text>
 							)}
 						</View>
+
+						{/* Trailing edge: the summary is read before the control, which is
+						    the order that makes sense spoken -- what is on, then play it. */}
+						<PlayButton streams={streams} size={48} />
 					</View>
 				)}
 

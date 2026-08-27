@@ -1,5 +1,5 @@
 import React from 'react'
-import { View, type ImageStyle } from 'react-native'
+import type { ImageStyle } from 'react-native'
 import { Image } from 'expo-image'
 import { useTheme } from '@/contexts/theme-context'
 import { config } from '@/lib/config'
@@ -57,39 +57,5 @@ export function Artwork({ uri, size = 88, radius = 10, style }: ArtworkProps) {
 			// station logo repeated on every card is noise to listen to.
 			accessible={false}
 		/>
-	)
-}
-
-/**
- * Artwork with a control sitting on it — the arrangement a radio app uses for
- * what is playing now.
- *
- * The scrim is not decoration. The button has to stay legible over artwork
- * nobody here has seen, which for a station-supplied image means assuming the
- * worst about its brightness.
- */
-export function ArtworkWithOverlay({
-	uri,
-	size = 88,
-	radius = 10,
-	children,
-}: ArtworkProps & { children: React.ReactNode }) {
-	return (
-		<View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-			<Artwork uri={uri} size={size} radius={radius} style={{ position: 'absolute' }} />
-			<View
-				style={{
-					position: 'absolute',
-					top: 0,
-					left: 0,
-					right: 0,
-					bottom: 0,
-					borderRadius: radius,
-					borderCurve: 'continuous',
-					backgroundColor: 'rgba(0,0,0,0.28)',
-				}}
-			/>
-			{children}
-		</View>
 	)
 }

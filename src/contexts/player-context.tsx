@@ -44,6 +44,9 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 	const status = useAudioPlayerStatus(player)
 
 	const [selectedStream, setSelectedStream] = useState<StationStream | null>(null)
+	// Whether the listener has asked for audio. Not the same as whether audio is
+	// coming out, and that difference is the whole of `isBuffering` below.
+	const [wantsPlay, setWantsPlay] = useState(false)
 	const [playerReady, setPlayerReady] = useState(false)
 	const [playerError, setPlayerError] = useState<string | null>(null)
 	const [streamRestored, setStreamRestored] = useState(false)
@@ -61,7 +64,19 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 	)
 
 	const isPlaying = status.playing
-	const isBuffering = status.isBuffering
+	/**
+	 * Busy means "asked for, not arrived yet" -- not `status.isBuffering`.
+	 *
+	 * The player is built with no source (`useAudioPlayer(null)`) and only gets
+	 * one when someone presses play, so at rest it reports buffering perfectly
+	 * truthfully: nothing is loaded. Wired straight to the button that showed a
+	 * spinner instead of a play triangle on a screen nobody had touched, and
+	 * `accessibilityState.busy` announced "busy" to anyone landing on it.
+	 *
+	 * Asked-for-but-not-playing covers the real cases too: it stays true while a
+	 * stream connects, and goes true again if a live stream stalls mid-listen.
+	 */
+	const isBuffering = wantsPlay && !status.playing
 
 	useEffect(() => {
 		configureAudioSession()
@@ -105,9 +120,11 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 			AsyncStorage.setItem(STREAM_STORAGE_KEY, JSON.stringify(stream)).catch(() => {})
 
 			try {
+				setWantsPlay(true)
 				playStream(player, stream.url, currentMetadata)
 				setPlayerError(null)
 			} catch (err) {
+				setWantsPlay(false)
 				setPlayerError(err instanceof Error ? err.message : 'Could not play this stream')
 			}
 		},
@@ -115,6 +132,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 	)
 
 	const pause = useCallback(() => {
+		setWantsPlay(false)
 		stopStream(player)
 	}, [player])
 
@@ -125,9 +143,11 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
 			if (!isPlaying && !isBuffering) return
 			try {
+				setWantsPlay(true)
 				playStream(player, stream.url, currentMetadata)
 				setPlayerError(null)
 			} catch (err) {
+				setWantsPlay(false)
 				setPlayerError(err instanceof Error ? err.message : 'Could not switch stream')
 			}
 		},

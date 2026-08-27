@@ -175,6 +175,13 @@ and the rest is text; hosting it keeps one layout instead of one per platform.
 - **Give it `snapPoints`.** Without them it sizes to its content, and a body that
   scrolls gives it no height to settle on.
 - **`contentPadding={0}`** where the content draws its own insets, or they stack.
+- **The tab bar floats over the content, and nothing insets for it.** The Listen
+  tab pads by `insets.bottom + 60` by hand: the bar's top edge is ~81pt off the
+  bottom of the screen, and at a flat 48 the social row sat behind it.
+  `contentInsetAdjustmentBehavior` does not reserve space for `NativeTabs`, and
+  expo-router exposes no tab-bar-height hook for it.
+
+### Sheets, continued
 - **`contentInsetAdjustmentBehavior="never"` on a `ScrollView` inside one.** The
   iOS default is `automatic`, which exists for a scroll view under a navigation
   bar; inside a sheet there is none to inset for, and left on it offset the
@@ -205,10 +212,14 @@ already been replaced to ship at all. The two failure modes are not symmetric,
 and the discoverability problem a placeholder would solve is better solved by a
 typed field in the file a station is already editing.
 
-The play control sits *on* the tile (`ArtworkWithOverlay`) rather than beside
-it — side by side, an 88pt tile and a 56pt button left the show name about
-140pt to wrap in. The scrim under the button is not decoration: it has to stay
-legible over station-supplied artwork nobody has seen.
+The play control sits *beside* the tile, on the trailing edge of the card. It
+was on the tile at first, which measured fine and looked wrong: a 52pt button
+over an 88pt tile left a sliver of logo showing, so the artwork was there and
+invisible. At 72pt for the tile and 48 for the button the title still has about
+185pt, which fits it on one line.
+
+Order in the row is artwork, summary, control — so a screen reader hears what is
+on before the button to play it.
 
 ### No forced attribution
 The More tab linked to broadcake.com under "Powered by Broadcake". A template
@@ -302,6 +313,14 @@ if (process.env.EXPO_OS === 'ios') {
 ### Audio Player
 - Nothing is registered at the entry point. The previous library needed a playback service registered there, and when that call was missing the lock screen, notification, headset and car buttons all appeared and silently did nothing — expo-audio's controls drive the player natively, so that failure has no equivalent
 - What is on air comes from the station's schedule (`useNowPlaying`), not from tags in the stream. ICY tags only ever existed for stations whose encoder sends them, and they never reached the lock screen anyway — it showed the stream's quality name. `setActiveForLockScreen(..., { isLiveStream: true })` hides the scrub bar, since a live stream has no length to seek through
+- **`isBuffering` is intent, not `status.isBuffering`.** The player is built with
+  no source (`useAudioPlayer(null)`) and only gets one when someone presses
+  play, so at rest expo-audio reports buffering perfectly truthfully — nothing
+  is loaded. Wired straight through, that put a spinner on the play button of a
+  screen nobody had touched and made `accessibilityState.busy` announce "busy"
+  to anyone who landed on it. It is `wantsPlay && !status.playing` now: asked
+  for, not arrived yet. That still covers connecting, and a live stream stalling
+  mid-listen
 - `PlayerProvider` wraps app, exposes `usePlayer()` hook
 - Stream selection persisted to AsyncStorage
 - The play control lives *in* the on-air card, and there is no separate player
