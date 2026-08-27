@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
-import { View, Text, ScrollView, Pressable } from 'react-native'
-import { BottomSheet, RNHostView } from '@expo/ui'
+import { View, Text, Pressable } from 'react-native'
+import { BottomSheet, RNHostView, ScrollView } from '@expo/ui'
 import { useTheme } from '@/contexts/theme-context'
 import { useShow } from '@/hooks/use-show'
 import { useShowSchedule } from '@/hooks/use-show-schedule'
@@ -44,8 +44,22 @@ export function ShowDetail({ visible, onClose, showSlug, showName }: ShowDetailP
 			snapPoints={['full']}
 			contentPadding={0}
 		>
-			<RNHostView>
-				<View style={{ flex: 1, backgroundColor: theme.background }}>
+			// The scroller is SwiftUI's, not React Native's.
+			//
+			// A React Native ScrollView hosted inside a SwiftUI sheet is not exposed
+			// to VoiceOver as something scrollable, so the three-finger scroll did
+			// nothing and anything below the fold could not be reached at all --
+			// a presenter with a long bio had their shows sitting off the end of a
+			// sheet that would not move. Rhino has no bio, so his showed and the
+			// fault looked like missing data.
+			//
+			// `ScrollView` here is `@expo/ui`'s, which is a real SwiftUI one, and
+			// `RNHostView matchContents` sizes the hosted tree to its own content so
+			// the scroller has something taller than itself to scroll. That is the
+			// composition the expo-ui skill documents.
+			<ScrollView>
+				<RNHostView matchContents>
+					<View style={{ backgroundColor: theme.background }}>
 					{/* Header */}
 					<View
 						style={{
@@ -76,15 +90,7 @@ export function ShowDetail({ visible, onClose, showSlug, showName }: ShowDetailP
 						</Pressable>
 					</View>
 
-					{/* `never`, not the iOS default of `automatic`: that adjustment
-					    exists for a scroll view under a navigation bar, and inside a
-					    sheet there is none to inset for. Left on, the content came up
-					    offset -- the top of the description was simply not there. */}
-					<ScrollView
-						contentInsetAdjustmentBehavior="never"
-						automaticallyAdjustContentInsets={false}
-						contentContainerStyle={{ padding: 16, gap: 20, paddingBottom: 32 }}
-					>
+					<View style={{ padding: 16, gap: 20, paddingBottom: 32 }}>
 						{/* Description -- markdown, as the station website renders it */}
 						<MarkdownText>{show?.description}</MarkdownText>
 
@@ -181,7 +187,7 @@ export function ShowDetail({ visible, onClose, showSlug, showName }: ShowDetailP
 								))}
 							</View>
 						)}
-					</ScrollView>
+					</View>
 
 					{/* Inside this sheet, not beside it — see the note above. */}
 					<PresenterDetail
@@ -189,8 +195,9 @@ export function ShowDetail({ visible, onClose, showSlug, showName }: ShowDetailP
 						onClose={() => setPresenterSlug(null)}
 						presenterSlug={presenterSlug}
 					/>
-				</View>
-			</RNHostView>
+					</View>
+				</RNHostView>
+			</ScrollView>
 		</BottomSheet>
 	)
 }

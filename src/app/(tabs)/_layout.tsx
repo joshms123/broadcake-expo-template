@@ -28,7 +28,10 @@ export default function TabLayout() {
 				<NativeTabs.Trigger.Label>Schedule</NativeTabs.Trigger.Label>
 			</NativeTabs.Trigger>
 
-			<NativeTabs.Trigger name="(more)">
+			{/* This screen is a native List, not a React Native ScrollView, so
+			    there is no scroll edge for the bar to react to -- without this it
+			    can stay transparent over the content. `references/tabs.md`. */}
+			<NativeTabs.Trigger name="(more)" disableTransparentOnScrollEdge>
 				<NativeTabs.Trigger.Icon sf="ellipsis" md="more_horiz" />
 				<NativeTabs.Trigger.Label>More</NativeTabs.Trigger.Label>
 			</NativeTabs.Trigger>

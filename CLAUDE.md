@@ -148,6 +148,20 @@ Two rules the compiler will not catch:
 `List` renders native grouped rows and does not recycle them, so it fits a short
 fixed set and would be the wrong choice for the schedule.
 
+**A `List` needs a definite height or it renders nothing at all.** It is
+SwiftUI's `List` — a scrolling container with no intrinsic size, which fills
+whatever it is given. `<Host matchContents>` gives it nothing, so it collapses
+to zero: the More tab showed its About text and neither the theme switch nor the
+website row, with no error anywhere. `FieldGroup` is SwiftUI's `Form` and does
+the same. Give the `Host` `flex: 1` (it extends `ViewProps`, so a real flex is
+allowed there even though the components inside it take the narrower
+`UniversalStyle`), or set `useViewportSizeMeasurement` — the prop exists for
+this and names `List` in its own documentation.
+
+And do not put a `List` inside a `ScrollView`: it scrolls itself, and the two
+fight over the same gesture. A settings screen is one full-height `Host` with
+one `List` in it, which is also the shape the platform expects.
+
 `ActionButton` is the app's one filled button. It is `variant="text"` with a
 background rather than `variant="filled"` on purpose: a filled button takes the
 platform accent, and the station's brand colour is configurable, so the accent
@@ -178,6 +192,23 @@ boundary, so `file_name_here` and a URL with underscores in it survive intact.
 
 Where there is no room to format — a two-line preview, an accessibility label —
 use `stripMarkdown()`. Never render the raw source.
+
+### Tab screens
+`references/tabs.md` in the `expo-router` skill is the reference; the rules that
+bite here:
+
+- **A wrapper around a screen's `ScrollView` needs `collapsable={false}`**, or
+  the tab bar loses the scroll edge and stops going opaque behind content. The
+  Listen tab wraps its scroll view in a `SafeAreaView`, so it sets this.
+- **A screen with no React Native `ScrollView` wants
+  `disableTransparentOnScrollEdge` on its `Trigger`.** More is a native `List`,
+  so there is no scroll edge for the bar to react to.
+- **Each tab nests its own `Stack`** — that is where the large title comes from.
+  Without it a tab has no header at all.
+- **Scroll-to-top on the active tab needs the scroll view to be the screen's
+  first child.** Listen's is inside a `SafeAreaView`, so it gives that up: the
+  screen barely scrolls, and the alternative is the social row off the bottom of
+  it. Worth knowing before wrapping a screen that does scroll.
 
 ### Sheets
 Show and presenter detail are `BottomSheet`, not React Native `Modal`. Two
@@ -231,11 +262,18 @@ and the rest is text; hosting it keeps one layout instead of one per platform.
   documents the boundary half and is worth reading before touching tab-screen
   layout.
 
-### Sheets, continued
-- **`contentInsetAdjustmentBehavior="never"` on a `ScrollView` inside one.** The
-  iOS default is `automatic`, which exists for a scroll view under a navigation
-  bar; inside a sheet there is none to inset for, and left on it offset the
-  content — the top of the description was simply not on screen.
+- **The scroller inside a sheet must be the native one.** A React Native
+  `ScrollView` hosted in a SwiftUI sheet is not exposed to VoiceOver as
+  scrollable: the three-finger scroll does nothing, and anything below the fold
+  cannot be reached at all. A presenter with a long bio had their shows sitting
+  off the end of a sheet that would not move, while one with no bio looked fine
+  — so it read as missing data rather than a broken scroller.
+
+  Use `@expo/ui`'s `ScrollView` (a real SwiftUI one) with `RNHostView
+  matchContents` inside it, and let the hosted React Native tree be a plain
+  `View`. `matchContents` sizes the host to its own content, which is what gives
+  the scroller something taller than itself to scroll. That is the composition
+  the `expo-ui` skill documents.
 
 `contact-form` is deliberately still a `Modal`. Its `KeyboardAvoidingView`
 measures the window rather than a natively-sized sheet, so moving it is a

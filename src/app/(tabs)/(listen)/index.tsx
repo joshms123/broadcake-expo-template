@@ -40,7 +40,14 @@ export default function ListenScreen() {
 	// Paired with `disableAutomaticContentInsets` on the trigger in
 	// `(tabs)/_layout.tsx`; without that the inset would be applied twice.
 	return (
-		<SafeAreaView edges={{ bottom: true }} style={{ flex: 1 }}>
+		<SafeAreaView
+			edges={{ bottom: true }}
+			style={{ flex: 1 }}
+			// `references/tabs.md`: a ScrollView wrapped in another view has to
+			// keep that wrapper in the native tree, or the tab bar loses track of
+			// the scroll edge and stops going opaque behind the content.
+			collapsable={false}
+		>
 			<ScrollView
 				style={{ flex: 1, backgroundColor: theme.background }}
 				// No bottom reserve, and no number anywhere. The SafeAreaView above

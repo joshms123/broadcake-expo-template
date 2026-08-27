@@ -1,6 +1,6 @@
 import React from 'react'
-import { View, Text, ScrollView, Pressable } from 'react-native'
-import { BottomSheet, RNHostView } from '@expo/ui'
+import { View, Text, Pressable } from 'react-native'
+import { BottomSheet, RNHostView, ScrollView } from '@expo/ui'
 import { useTheme } from '@/contexts/theme-context'
 import { usePresenter } from '@/hooks/use-presenter'
 import { Avatar } from '@/components/common/avatar'
@@ -42,8 +42,22 @@ export function PresenterDetail({ visible, onClose, presenterSlug }: PresenterDe
 			// The content draws its own insets, as it did as a modal.
 			contentPadding={0}
 		>
-			<RNHostView>
-				<View style={{ flex: 1, backgroundColor: theme.background }}>
+			// The scroller is SwiftUI's, not React Native's.
+			//
+			// A React Native ScrollView hosted inside a SwiftUI sheet is not exposed
+			// to VoiceOver as something scrollable, so the three-finger scroll did
+			// nothing and anything below the fold could not be reached at all --
+			// a presenter with a long bio had their shows sitting off the end of a
+			// sheet that would not move. Rhino has no bio, so his showed and the
+			// fault looked like missing data.
+			//
+			// `ScrollView` here is `@expo/ui`'s, which is a real SwiftUI one, and
+			// `RNHostView matchContents` sizes the hosted tree to its own content so
+			// the scroller has something taller than itself to scroll. That is the
+			// composition the expo-ui skill documents.
+			<ScrollView>
+				<RNHostView matchContents>
+					<View style={{ backgroundColor: theme.background }}>
 					{/* Header */}
 					<View
 						style={{
@@ -77,15 +91,7 @@ export function PresenterDetail({ visible, onClose, presenterSlug }: PresenterDe
 						</Pressable>
 					</View>
 
-					{/* `never`, not the iOS default of `automatic`: that adjustment
-					    exists for a scroll view under a navigation bar, and inside a
-					    sheet there is none to inset for. Left on, the content came up
-					    offset -- the top of the description was simply not there. */}
-					<ScrollView
-						contentInsetAdjustmentBehavior="never"
-						automaticallyAdjustContentInsets={false}
-						contentContainerStyle={{ padding: 16, gap: 20, paddingBottom: 32 }}
-					>
+					<View style={{ padding: 16, gap: 20, paddingBottom: 32 }}>
 						{/* Avatar + name */}
 						<View style={{ alignItems: 'center', gap: 12 }}>
 							<Avatar
@@ -145,9 +151,10 @@ export function PresenterDetail({ visible, onClose, presenterSlug }: PresenterDe
 								))}
 							</View>
 						)}
-					</ScrollView>
-				</View>
-			</RNHostView>
+					</View>
+					</View>
+				</RNHostView>
+			</ScrollView>
 		</BottomSheet>
 	)
 }

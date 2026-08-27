@@ -63,6 +63,10 @@ const ICONS = {
 		ios: 'sun.max.fill',
 		android: require('@expo/material-symbols/light_mode.xml'),
 	}),
+	waveform: Icon.select({
+		ios: 'waveform',
+		android: require('@expo/material-symbols/graphic_eq.xml'),
+	}),
 	'arrow.up.right': Icon.select({
 		ios: 'arrow.up.right',
 		android: require('@expo/material-symbols/arrow_outward.xml'),
