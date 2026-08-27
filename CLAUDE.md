@@ -79,9 +79,10 @@ packages/app-template/
       common/               action-button, app-icon, artwork, avatar, badge, markdown-text, skeleton,
                             empty-state, time-display, social-icons, social-marks,
                             error-boundary
-  assets/
-    social/                 brand marks, two tones each (generated -- see below)
       modals/               show-detail, presenter-detail, contact-form
+  assets/
+    images/                 icon, splash (light + dark), Android adaptive set
+    social/                 brand marks, two tones each (generated -- see below)
 ```
 
 ## Key Conventions
@@ -175,11 +176,29 @@ and the rest is text; hosting it keeps one layout instead of one per platform.
 - **Give it `snapPoints`.** Without them it sizes to its content, and a body that
   scrolls gives it no height to settle on.
 - **`contentPadding={0}`** where the content draws its own insets, or they stack.
-- **The tab bar floats over the content, and nothing insets for it.** The Listen
-  tab pads by `insets.bottom + 60` by hand: the bar's top edge is ~81pt off the
-  bottom of the screen, and at a flat 48 the social row sat behind it.
-  `contentInsetAdjustmentBehavior` does not reserve space for `NativeTabs`, and
-  expo-router exposes no tab-bar-height hook for it.
+- **To pin anything above the tab bar, make the safe area a boundary — do not
+  reserve space for it.** Put `disableAutomaticContentInsets` on that tab's
+  `NativeTabs.Trigger` and wrap the screen in `SafeAreaView` from
+  `react-native-screens/experimental` with `edges={{ bottom: true }}` and
+  `flex: 1`. Inside it the scroll view's frame already ends above the bar, so
+  `flexGrow: 1` measures the visible height and `marginTop: 'auto'` lands
+  somewhere you can see. No height, no constant, and it follows the screen and
+  the text size for free. The Listen tab is the worked example.
+
+  The two properties must go together: without `disableAutomaticContentInsets`
+  the inset is applied twice, since expo-router already adjusts the first
+  ScrollView on iOS.
+
+  Padding your way out does not work, and the failure is counter-intuitive
+  enough to be worth writing down. The bar's height cannot be measured — it is
+  drawn by native code outside the view tree, and `useBottomTabBarHeight` throws
+  under `NativeTabs` (expo-router provides that context only from the JavaScript
+  `BottomTabView`). Worse, `flexGrow: 1` takes the container's minHeight from
+  the ScrollView's *frame*, which extends under the bar, so `paddingBottom` grows
+  the container instead of lifting anything while `marginTop: 'auto'` pins to
+  that lower edge. Adding padding moved the row 19pt further **down** the screen.
+  Two attempts went that way before `references/tabs.md` in the `expo-router`
+  skill turned out to document the boundary approach.
 
 ### Sheets, continued
 - **`contentInsetAdjustmentBehavior="never"` on a `ScrollView` inside one.** The

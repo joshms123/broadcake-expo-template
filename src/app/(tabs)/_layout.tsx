@@ -14,7 +14,11 @@ export default function TabLayout() {
 	// comes from the Trigger's `name`.
 	return (
 		<NativeTabs tintColor={theme.primary}>
-			<NativeTabs.Trigger name="(listen)">
+			{/* The Listen tab manages its own bottom inset. It pins the social row
+			    to the bottom of the screen, and that only works if the safe area is
+			    a view boundary rather than a scroll inset -- see the SafeAreaView
+			    in the screen itself. */}
+			<NativeTabs.Trigger name="(listen)" disableAutomaticContentInsets>
 				<NativeTabs.Trigger.Icon sf="radio" md="radio" />
 				<NativeTabs.Trigger.Label>Listen</NativeTabs.Trigger.Label>
 			</NativeTabs.Trigger>

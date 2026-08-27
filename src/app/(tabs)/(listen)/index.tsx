@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { View, Text, ScrollView, Pressable, RefreshControl } from 'react-native'
 import Animated, { FadeIn } from 'react-native-reanimated'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { SafeAreaView } from 'react-native-screens/experimental'
 import { useTheme } from '@/contexts/theme-context'
 import { useStation } from '@/hooks/use-station'
 import { useNowPlaying } from '@/hooks/use-now-playing'
@@ -21,7 +21,6 @@ export default function ListenScreen() {
 	const { data: station, isError: stationError, refetch: refetchStation } = useStation()
 	const { data: nowPlaying, refetch: refetchNowPlaying } = useNowPlaying()
 	const { playerError } = usePlayer()
-	const insets = useSafeAreaInsets()
 	const [contactFormVisible, setContactFormVisible] = useState(false)
 	const [refreshing, setRefreshing] = useState(false)
 
@@ -34,24 +33,22 @@ export default function ListenScreen() {
 		setRefreshing(false)
 	}
 
+	// SafeAreaView makes the tab bar a boundary of this view rather than
+	// something drawn across it, which is the whole trick. Its height is never
+	// measured -- it cannot be -- but inside here the scroll view's frame
+	// already ends above it, so ordinary flexbox pins to somewhere visible.
+	// Paired with `disableAutomaticContentInsets` on the trigger in
+	// `(tabs)/_layout.tsx`; without that the inset would be applied twice.
 	return (
-		<>
+		<SafeAreaView edges={{ bottom: true }} style={{ flex: 1 }}>
 			<ScrollView
 				style={{ flex: 1, backgroundColor: theme.background }}
-				// flexGrow so the content area fills the screen even when it is
-				// shorter than one, which is what lets the social row sit at the
-				// bottom rather than trailing the cards with a void beneath it.
-				//
-				// The bottom padding clears the tab bar by hand. It floats over the
-				// content on iOS and `contentInsetAdjustmentBehavior` does not reserve
-				// space for it, so at 48 the social row sat behind it: the bar's top
-				// edge is ~81pt off the bottom of the screen and the icons ran to 26pt.
-				contentContainerStyle={{
-					padding: 16,
-					gap: 20,
-					paddingBottom: insets.bottom + 60,
-					flexGrow: 1,
-				}}
+				// No bottom reserve, and no number anywhere. The SafeAreaView above
+				// makes the tab bar a boundary of this view rather than an overlay
+				// across it, so the scroll view's frame already stops above the bar
+				// and `flexGrow: 1` measures the visible height. That is what makes
+				// the auto margin below land where you can see it.
+				contentContainerStyle={{ padding: 16, gap: 20, flexGrow: 1 }}
 				contentInsetAdjustmentBehavior="automatic"
 				refreshControl={
 					<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -273,9 +270,9 @@ export default function ListenScreen() {
 					</View>
 				)}
 
-				{/* Pushed to the bottom by the auto margin, which absorbs whatever
-				    space is left over. When the cards are tall enough to fill the
-				    screen there is none, and this just follows them. */}
+				{/* The auto margin takes whatever space is left, so the links sit at
+				    the bottom of the reserved area and simply follow the cards when
+				    there is none left to take. */}
 				<View style={{ marginTop: 'auto', gap: 20 }}>
 				{/* Social Links */}
 				{socialLinks.length > 0 && (
@@ -330,6 +327,6 @@ export default function ListenScreen() {
 					formSlug={config.features.contactFormSlug}
 				/>
 			)}
-		</>
+		</SafeAreaView>
 	)
 }
